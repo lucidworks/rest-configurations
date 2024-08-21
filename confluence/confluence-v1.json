@@ -1,0 +1,62 @@
+{
+    "parserId": "rest_connector",
+    "created": "2024-08-21T14:34:00.546Z",
+    "coreProperties": {},
+    "modified": "2024-08-21T18:12:43.502Z",
+    "id": "confluence-api-v1",
+    "type": "lucidworks.rest",
+    "properties": {
+        "serviceURL": "https://lucidworks-dev.atlassian.net",
+        "authenticationMode": {
+            "basicAuth": {
+                "password": "xXx-Redacted-xXx",
+                "user": "rd-connectors@lucidworks.cloud"
+            }
+        },
+        "serviceEndpoints": [
+            {
+                "childrenRequests": [
+                    {
+                        "dataRequest": {
+                            "endpoint": "/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment",
+                            "httpMethod": "GET"
+                        },
+                        "childResponseMapping": {
+                            "childDataPath": "results",
+                            "parentIdKey": "id"
+                        }
+                    }
+                ],
+                "rootRequest": {
+                    "dataRequest": {
+                        "endpoint": "/wiki/rest/api/content",
+                        "pagination": {
+                            "paginationByBatchSize": {
+                                "batchSize": 1,
+                                "indexStart": 0
+                            }
+                        },
+                        "httpMethod": "GET",
+                        "queries": [
+                            {
+                                "queryKey": "start",
+                                "queryValue": "${LW_INDEX_START}"
+                            },
+                            {
+                                "queryKey": "limit",
+                                "queryValue": "${LW_BATCH_SIZE}"
+                            }
+                        ]
+                    },
+                    "rootResponseMapping": {
+                        "dataId": "id",
+                        "dataPath": "results"
+                    }
+                }
+            }
+        ],
+        "collection": "{replace me with collection name}"
+    },
+    "pipeline": "rest_connector",
+    "connector": "lucidworks.rest"
+}

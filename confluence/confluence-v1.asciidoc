@@ -1,0 +1,73 @@
+Confluence Rest Configuration
+----------------------------
+This documentation describs what data the confluence configuration retrives and the endpoints used.
+This is this list of data that rest connector using confluence configuration will crawl.
+
+* spaces 
+* pages (such as Wiki pages), 
+* blog posts,  
+* pages and blog posts comments (indexed as metadata) 
+
+Authentication
+~~~~~~~~~~~~~~~
+Support Basic Authentication with username (atlasian account) and API Token
+
+1. For more info see Documentation here - https://developer.atlassian.com/cloud/confluence/basic-auth-for-rest-apis/ 
+
+2. Check here to create new Token API https://id.atlassian.com/manage/api-tokens
+
+
+Supported Crawl
+~~~~~~~~~~~~~~~
+* Full Crawl supported
+* Re-Crawl supported - `rely on the strayContentDeletion`
+
+
+Rest Connector Variables used
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* ${LW_BATCH_SIZE} - This variable is used to set the `limit` query parameter which controls the number results are return in the response for both `blogpost` and `pages`
+
+* {LW_INDEX_START} - This variable  is used to set the `start` query parameter which use the travers the pagination. Confluence pagination is 0 based. This means the first page number is 0.
+
+* {LW_PARAM_KEY} - This variable is uesd to access a value from the response from `main request`to used in a `additional request`. Confluence use case this variable added to URL to proform a GET request, to get comments for blogpost and pages
+
+
+Endpoints to configure with Rest-Connector
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The table below consists of a list of endpoints and descriptions of what each endpoint retrieves.
+
+*Notes:*
+
+List of objects (spaces, pages, blogs, comments) are retrieved in batches (25 by default). Configure query limit to get more objects (the max size is 250)
+
+
+[options="header"]
+|=======================
+|Endpoint|Http Verb |Query Param |Description |Request type
+|/wiki/rest/api/content|GET    |type=blogpost&start=0&limit=1&expand=body.storage|get all blogpost from confluence|Data Request
+|/wiki/rest/api/content/${LW_PARAM_KEY}/child/comment|GET|expand=body.storage|This endpoint gets all blogpost comment. The value of `id` from the main request needs to be assign to the `${LW_PARAM_KEY}` variable so that the addtional feature can build insert the value to the get url.  |Child Endpoint
+|/wiki/rest/api/content | GET |type=paget&start=0&limit=1&expand=body.storage |get all pages from confluence |Data Request
+|/wiki/rest/api/content/${LW_PARAM_KEY}/child/comment|GET|expand=body.storage|This endpoint gets all page comment. The value of `id` from the main request needs to be assign to the `${LW_PARAM_KEY}` variable so that the addtional feature can build insert the value to the get url.  |Child Endpoint
+|=======================
+
+
+
+Terminalogy
+~~~~~~~~~~~~
+
+* `Service Endpoints` - List of Service Endpoints
+* `Data Request` - Configure the endpoint request
+* `Child Endpoint` Request - The requests to retrieve additional information for the root data objects. It iterates over root data objects, and perform a request per each one.
+* `Root Response Mapping` - Define the mapping between the response and data objects to be indexed.
+* `Data Path` - The path to access a specific data object within a response. For example, in order to access a list of elements named with key 'objects', the DataPath would be 'objects'. If not provided, the entire response body will be indexed.
+* `DATA ID` - The identifier key for the data object, which value will be the solr-document's ID. If not provided, a random UUID will be used
+
+* `Root Response Mapping` - Define the mapping between the response and data objects to be indexed.
+* `Parent Data Key` - Key to extract data from root/parent response for subsequent request. The extracted value will be used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body).For example, endpoint: /api/path/${LW_PARENT_DATA_KEY}/additionalInfo
+
+* `Child Data Path` - The path to access a specific object within a child response. For example, to access a list of elements named with key 'objects', the ChildDataPath would be 'objects'.If not provided, the entire response body will be indexed.
+
+* `Child Data ID` - The identifier key for the child data object, which value will be the solr-document's ID. Fill this when 'Custom Solr Field' is empty, otherwise the solr-document's ID will be a random UUID.
+
+* `Custom Solr Field` - The field to use to store the child data within the root data objects. If not set, the child data object will be indexed as an individual solr-documents.
+
