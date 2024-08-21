@@ -52,7 +52,7 @@ List of objects (spaces, pages, blogs, comments) are retrieved in batches (25 by
 
 
 
-Terminalogy
+Terminology
 ~~~~~~~~~~~~
 
 * `Service Endpoints` - List of Service Endpoints
