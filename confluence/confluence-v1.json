@@ -1,16 +1,16 @@
 {
-    "parserId": "rest_connector",
+    "parserId": "{add parserid }",
     "created": "2024-08-21T14:34:00.546Z",
     "coreProperties": {},
-    "modified": "2024-08-21T18:12:43.502Z",
-    "id": "confluence-api-v1",
+    "modified": "2024-08-21T20:00:35.287Z",
+    "id": "confluence",
     "type": "lucidworks.rest",
     "properties": {
-        "serviceURL": "https://lucidworks-dev.atlassian.net",
+        "serviceURL": "https://{add confluence instance}",
         "authenticationMode": {
             "basicAuth": {
                 "password": "xXx-Redacted-xXx",
-                "user": "rd-connectors@lucidworks.cloud"
+                "user": "add email address here!!!"
             }
         },
         "serviceEndpoints": [
@@ -19,7 +19,13 @@
                     {
                         "dataRequest": {
                             "endpoint": "/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment",
-                            "httpMethod": "GET"
+                            "httpMethod": "GET",
+                            "queries": [
+                                {
+                                    "queryKey": "expand",
+                                    "queryValue": "body.storage"
+                                }
+                            ]
                         },
                         "childResponseMapping": {
                             "childDataPath": "results",
@@ -45,6 +51,14 @@
                             {
                                 "queryKey": "limit",
                                 "queryValue": "${LW_BATCH_SIZE}"
+                            },
+                            {
+                                "queryKey": "expand",
+                                "queryValue": "body.storage"
+                            },
+                            {
+                                "queryKey": "type",
+                                "queryValue": "blogpost"
                             }
                         ]
                     },
@@ -53,10 +67,65 @@
                         "dataPath": "results"
                     }
                 }
+            },
+            {
+                "childrenRequests": [
+                    {
+                        "dataRequest": {
+                            "endpoint": "/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment",
+                            "httpMethod": "GET",
+                            "queries": [
+                                {
+                                    "queryKey": "expand",
+                                    "queryValue": "body.storage"
+                                }
+                            ]
+                        },
+                        "childResponseMapping": {
+                            "childDataId": "",
+                            "childDataPath": "results",
+                            "parentIdKey": "id"
+                        }
+                    }
+                ],
+                "rootRequest": {
+                    "dataRequest": {
+                        "endpoint": "/wiki/rest/api/content",
+                        "pagination": {
+                            "paginationByBatchSize": {
+                                "batchSize": 1,
+                                "indexStart": 0
+                            }
+                        },
+                        "httpMethod": "GET",
+                        "queries": [
+                            {
+                                "queryKey": "expand",
+                                "queryValue": "body.storage"
+                            },
+                            {
+                                "queryKey": "type",
+                                "queryValue": "page"
+                            },
+                            {
+                                "queryKey": "start",
+                                "queryValue": "${LW_INDEX_START}"
+                            },
+                            {
+                                "queryKey": "limit",
+                                "queryValue": "${LW_BATCH_SIZE}"
+                            }
+                        ]
+                    },
+                    "rootResponseMapping": {
+                        "dataId": "results",
+                        "dataPath": "id"
+                    }
+                }
             }
         ],
-        "collection": "{replace me with collection name}"
+        "collection": "{add collection here}"
     },
-    "pipeline": "rest_connector",
+    "pipeline": "{add pipeline name}",
     "connector": "lucidworks.rest"
 }
