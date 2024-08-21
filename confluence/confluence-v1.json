@@ -118,8 +118,8 @@
                         ]
                     },
                     "rootResponseMapping": {
-                        "dataId": "results",
-                        "dataPath": "id"
+                        "dataId": "id",
+                        "dataPath": "results"
                     }
                 }
             }
