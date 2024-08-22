@@ -38,7 +38,7 @@
                         "endpoint": "/wiki/rest/api/content",
                         "pagination": {
                             "paginationByBatchSize": {
-                                "batchSize": 1,
+                                "batchSize": 100,
                                 "indexStart": 0
                             }
                         },
@@ -55,71 +55,12 @@
                             {
                                 "queryKey": "expand",
                                 "queryValue": "body.storage"
-                            },
-                            {
-                                "queryKey": "type",
-                                "queryValue": "blogpost"
                             }
                         ]
                     },
                     "rootResponseMapping": {
                         "dataId": "id",
-                        "dataPath": "results"
-                    }
-                }
-            },
-            {
-                "childrenRequests": [
-                    {
-                        "dataRequest": {
-                            "endpoint": "/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment",
-                            "httpMethod": "GET",
-                            "queries": [
-                                {
-                                    "queryKey": "expand",
-                                    "queryValue": "body.storage"
-                                }
-                            ]
-                        },
-                        "childResponseMapping": {
-                            "childDataId": "",
-                            "childDataPath": "results",
-                            "parentIdKey": "id"
-                        }
-                    }
-                ],
-                "rootRequest": {
-                    "dataRequest": {
-                        "endpoint": "/wiki/rest/api/content",
-                        "pagination": {
-                            "paginationByBatchSize": {
-                                "batchSize": 1,
-                                "indexStart": 0
-                            }
-                        },
-                        "httpMethod": "GET",
-                        "queries": [
-                            {
-                                "queryKey": "expand",
-                                "queryValue": "body.storage"
-                            },
-                            {
-                                "queryKey": "type",
-                                "queryValue": "page"
-                            },
-                            {
-                                "queryKey": "start",
-                                "queryValue": "${LW_INDEX_START}"
-                            },
-                            {
-                                "queryKey": "limit",
-                                "queryValue": "${LW_BATCH_SIZE}"
-                            }
-                        ]
-                    },
-                    "rootResponseMapping": {
-                        "dataId": "id",
-                        "dataPath": "results"
+                        "dataPath": ""
                     }
                 }
             }
