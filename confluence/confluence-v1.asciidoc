@@ -22,6 +22,10 @@ Supported Crawl
 * Full Crawl supported
 * Re-Crawl supported - `rely on the strayContentDeletion`
 
+Pagination
+~~~~~~~~~~~
+This recipe is configured to used pagination by batch size. The variable `${LW_INDEX_START}` is set to zero be the atlassian pagnation is zero index base.The `${LW_BATCH_SIZE}` is set to `20` but can be adjusted to any value.
+The pagination stop condition is set to `results` response object set `[]`. When this condition is meet the pagination will stop.
 
 Rest Connector Variables used
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -29,7 +33,7 @@ Rest Connector Variables used
 
 * {LW_INDEX_START} - This variable  is used to set the `start` query parameter which use the travers the pagination. Confluence pagination is 0 based. This means the first page number is 0.
 
-* {LW_PARAM_KEY} - This variable is uesd to access a value from the response from `main request`to used in a `additional request`. Confluence use case this variable added to URL to proform a GET request, to get comments for blogpost and pages
+* {LW_PARENT_DATA_KEY} - This variable is uesd to access a value from the response from `main request`to used in a `additional request`. Confluence use case this variable added to URL to proform a GET request, to get comments for blogpost and pages
 
 
 Endpoints to configure with Rest-Connector
@@ -45,9 +49,9 @@ List of objects (spaces, pages, blogs, comments) are retrieved in batches (25 by
 |=======================
 |Endpoint|Http Verb |Query Param |Description |Request type
 |/wiki/rest/api/content|GET    |type=blogpost&start=0&limit=1&expand=body.storage|get all blogpost from confluence|Data Request
-|/wiki/rest/api/content/${LW_PARAM_KEY}/child/comment|GET|expand=body.storage|This endpoint gets all blogpost comment. The value of `id` from the main request needs to be assign to the `${LW_PARAM_KEY}` variable so that the addtional feature can build insert the value to the get url.  |Child Endpoint
+|/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment|GET|expand=body.storage|This endpoint gets all blogpost comment. The value of `id` from the main request needs to be assign to the `${LW_PARENT_DATA_KEY}` variable so that the addtional feature can build insert the value to the get url.  |Child Endpoint
 |/wiki/rest/api/content | GET |type=paget&start=0&limit=1&expand=body.storage |get all pages from confluence |Data Request
-|/wiki/rest/api/content/${LW_PARAM_KEY}/child/comment|GET|expand=body.storage|This endpoint gets all page comment. The value of `id` from the main request needs to be assign to the `${LW_PARAM_KEY}` variable so that the addtional feature can build insert the value to the get url.  |Child Endpoint
+|/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment|GET|expand=body.storage|This endpoint gets all page comment. The value of `id` from the main request needs to be assign to the `${LW_PARENT_DATA_KEY}` variable so that the addtional feature can build insert the value to the get url.  |Child Endpoint
 |=======================
 
 
