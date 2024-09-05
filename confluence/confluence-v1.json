@@ -1,8 +1,6 @@
 {
     "parserId": "{add parserid }",
-    "created": "2024-08-21T14:34:00.546Z",
     "coreProperties": {},
-    "modified": "2024-08-21T20:00:35.287Z",
     "id": "confluence",
     "type": "lucidworks.rest",
     "properties": {
