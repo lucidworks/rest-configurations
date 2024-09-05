@@ -6,7 +6,7 @@ This is this list of data that rest connector using confluence configuration wil
 * spaces 
 * pages (such as Wiki pages), 
 * blog posts,  
-* pages and blog posts comments (indexed as metadata) 
+* pages and blog posts comments (indexed as individual solr-docs)
 
 Authentication
 ~~~~~~~~~~~~~~~
