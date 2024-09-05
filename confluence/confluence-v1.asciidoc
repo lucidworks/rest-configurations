@@ -1,6 +1,6 @@
 Confluence Rest Configuration
 ----------------------------
-This documentation describs what data the confluence configuration retrives and the endpoints used.
+This documentation describes what data the confluence configuration retrieves and the endpoints used.
 This is this list of data that rest connector using confluence configuration will crawl.
 
 * spaces 
