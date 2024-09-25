@@ -54,7 +54,7 @@ The following table describes the Confluence Rest connector endpoints.
 
 *Notes:*
 
-The list of objects, such as spaces, pages, blogs, and comments, are retrieved in batches. The default number of batch items retrieved is 25. You can configure the query limit to retrieve more objects. The maximum value to retrieve is 250.
+The list of objects is retrieved in batches. Objects include spaces, pages, blogs, and comments. The default number of batch items retrieved is 25. You can configure the query limit to retrieve more objects. The maximum value to retrieve is 250.
 
 
 [options="header"]
