@@ -40,11 +40,11 @@ The `confluence-v1.json` file is also referred to as a recipe and is configured 
 
 The Confluence rest configuration variables used are:
 
-* ${LW_BATCH_SIZE} - This variable is used to set the `limit` query parameter, which controls the number of results that are returned in the response for both `blogpost` and `pages`.
+* `${LW_BATCH_SIZE}` - This variable is used to set the `limit` query parameter, which controls the number of results that are returned in the response for both `blogpost` and `pages`.
 
-* ${LW_INDEX_START} - This variable is used to set the `start` query parameter, which is used to traverse the pagination. Confluence pagination is zero-index-based. This means the first page number is 0.
+* `${LW_INDEX_START}` - This variable is used to set the `start` query parameter, which is used to traverse the pagination. Confluence pagination is zero-index-based. This means the first page number is 0.
 
-* ${LW_PARENT_DATA_KEY} - This variable is used to access a value of the response from the `main request` to use in an `additional request`. The Confluence use case indicates this variable can be added the URL to execute a GET request to retrieve comments for blogposts and pages.
+* `${LW_PARENT_DATA_KEY}` - This variable is used to access a value of the response from the `main request` to use in an `additional request`. The Confluence use case indicates this variable can be added the URL to execute a GET request to retrieve comments for blogposts and pages.
 
 
 *Endpoints to configure with the Confluence Rest connector*
