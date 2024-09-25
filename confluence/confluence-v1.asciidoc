@@ -40,11 +40,11 @@ The `confluence-v1.json` file is also referred to as a recipe and is configured 
 
 The Confluence rest configuration variables used are:
 
-* ${LW_BATCH_SIZE} - This variable is used to set the `limit` query parameter, which controls the number results that are returned in the response for both `blogpost` and `pages`.
+* ${LW_BATCH_SIZE} - This variable is used to set the `limit` query parameter, which controls the number of results that are returned in the response for both `blogpost` and `pages`.
 
 * ${LW_INDEX_START} - This variable is used to set the `start` query parameter, which is used to traverse the pagination. Confluence pagination is zero-index-based. This means the first page number is 0.
 
-* ${LW_PARENT_DATA_KEY} - This variable is used to access a value from the response from the `main request` to use in an `additional request`. The Confluence use case indicates this variable can be added the URL to execute a GET request to retrieve comments for blogposts and pages.
+* ${LW_PARENT_DATA_KEY} - This variable is used to access a value of the response from the `main request` to use in an `additional request`. The Confluence use case indicates this variable can be added the URL to execute a GET request to retrieve comments for blogposts and pages.
 
 
 *Endpoints to configure with the Confluence Rest connector*
@@ -54,7 +54,7 @@ The following table describes the Confluence Rest connector endpoints.
 
 *Notes:*
 
-The list of objects, such as spaces, pages, blogs, and comments, are retrieved in batches. The number of batch items defaults to 25. You can configure the query limit to retrieve more objects. The maximum value to retrieve is 250.
+The list of objects, such as spaces, pages, blogs, and comments, are retrieved in batches. The default number of batch items retrieved is 25. You can configure the query limit to retrieve more objects. The maximum value to retrieve is 250.
 
 
 [options="header"]
@@ -78,12 +78,12 @@ The following terms are provided as a reference.
 |Term|Description
 |`Service Endpoints`|The list of endpoints (URLs) from which data is retrieved.
 |`Data Request`|A type of request used to retrieve data.
-|`Child Endpoint`|The request to retrieve additional information for the root data objects. It iterates over root data objects, and performs a request per each one.
+|`Child Endpoint`|The type of request to retrieve additional information for the root data objects. It iterates over root data objects, and performs a request for each one.
 |`Root Response Mapping`|Defines the mapping between the response and data objects to be indexed.
-|`Data Path`|The path to access a specific data object within a response. For example, in order to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed.
+|`Data Path`|The path to access a specific data object within a response. For example, to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed.
 |`DATA ID`|The identifier key for the data object where the value is the solr-document's ID. If not provided, a random universally unique identifier (UUID) will be used.
-|`Parent Data Key`|Key to extract data from root/parent response used in the subsequent request. The extracted value is used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example, endpoint: /api/path/${LW_PARENT_DATA_KEY}/additionalInfo.
-|`Child Data Path`|The path to access a specific object within a child response. For example, to access a list of elements named with key `objects`, the ChildDataPath would be `objects`. If not provided, the entire response body will be indexed.
+|`Parent Data Key`|Key to extract data from the root/parent response used in the subsequent request. The extracted value is used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example, endpoint: /api/path/${LW_PARENT_DATA_KEY}/additionalInfo.
+|`Child Data Path`|The path to access a specific object within a child response. For example, to access a list of elements named with the key `objects`, the ChildDataPath would be `objects`. If not provided, the entire response body will be indexed.
 |`Child Data ID`|The identifier key for the child data object, where the value is the solr-document's ID. Enter this when the `Custom Solr Field` is empty, otherwise the solr-document's ID will be a random universally unique identifier (UUID).
 |`Custom Solr Field`|The field in which to store the child data within the root data objects. If not set, the child data object will be indexed as an individual solr-document.
 
