@@ -1,12 +1,19 @@
-*Confluence Rest Configuration*
+*Confluence REST Configuration*
 -------------------------------
-This documentation describes aspects of the Confluence Rest Configuration such as the authentication methods, data crawled and retrieved, pagination information, variables used, and endpoints used. Terminology is also provided as a reference.
+This documentation describes aspects of the Confluence REST Configuration such as the authentication methods, data crawled and retrieved, pagination information, variables used, and endpoints used. Terminology is also provided as a reference.
+
+The list of data the REST connector crawls using the Confluence REST configuration is:
+
+* Spaces 
+* Pages such as Wiki pages 
+* Blog posts  
+* Pages and blog posts comments that are indexed as individual solr-docs
 
 
 *Authentication methods*
 ------------------------
 
-The Confluence rest configuration supports:
+The Confluence REST configuration supports:
 
 * Basic Authentication using the username and password from an Atlassian account. For more information, see https://developer.atlassian.com/cloud/confluence/basic-auth-for-rest-apis/.
 
@@ -16,7 +23,7 @@ The Confluence rest configuration supports:
 *Supported crawl options*
 -------------------------
 
-The Confluence rest configuration supports the following crawl options:
+The Confluence REST configuration supports the following crawl options:
 
 * Full crawl
 
@@ -38,7 +45,7 @@ The `confluence-v1.json` file is also referred to as a recipe and is configured 
 *Variables used*
 ----------------
 
-The Confluence rest configuration variables used are:
+The Confluence REST configuration variables used are:
 
 * `${LW_BATCH_SIZE}` - This variable is used to set the `limit` query parameter, which controls the number of results that are returned in the response for both `blogpost` and `pages`.
 
@@ -47,10 +54,10 @@ The Confluence rest configuration variables used are:
 * `${LW_PARENT_DATA_KEY}` - This variable is used to access a value of the response from the `main request` to use in an `additional request`. The Confluence use case indicates this variable can be added the URL to execute a GET request to retrieve comments for blogposts and pages.
 
 
-*Endpoints to configure with the Confluence Rest connector*
+*Endpoints to configure with the Confluence REST connector*
 -----------------------------------------------------------
 
-The following table describes the Confluence Rest connector endpoints.
+The following table describes the Confluence REST connector endpoints.
 
 *Notes:*
 
