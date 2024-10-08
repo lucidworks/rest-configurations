@@ -33,7 +33,7 @@ The Confluence REST configuration supports the following crawl options:
 *Pagination information*
 ------------------------
 
-The `confluence-v1.json` file is also referred to as a recipe. This recipe is configured to use pagination by batch size. 
+This recipe is configured to use pagination by batch size. 
 
 * The `${LW_INDEX_START}` variable is set to zero because the Atlassian pagination is zero-index-based. 
 
