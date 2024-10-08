@@ -1,6 +1,6 @@
 *Confluence REST Configuration*
 -------------------------------
-This documentation describes aspects of the Confluence REST Configuration such as the authentication methods, data crawled and retrieved, pagination information, variables used, and endpoints used. Terminology is also provided as a reference.
+This documentation describes aspects of the Confluence REST `confluence-v1.json` file configuration such as the authentication methods, data crawled and retrieved, pagination information, variables used, and endpoints used. Terminology is also provided as a reference.
 
 The list of data the REST connector crawls using the Confluence REST configuration is:
 
@@ -33,7 +33,7 @@ The Confluence REST configuration supports the following crawl options:
 *Pagination information*
 ------------------------
 
-The `confluence-v1.json` file is also referred to as a recipe and is configured to use pagination by batch size. 
+The `confluence-v1.json` file is also referred to as a recipe. This recipe is configured to use pagination by batch size. 
 
 * The `${LW_INDEX_START}` variable is set to zero because the Atlassian pagination is zero-index-based. 
 
@@ -67,10 +67,10 @@ The list of objects is retrieved in batches. Objects include spaces, pages, blog
 [options="header"]
 |=======================
 |Endpoint|HTTP operation |Query parameter |Description |Request type
-|/wiki/rest/api/content|GET    |type=blogpost&start=0&limit=1&expand=body.storage|Returns all blogposts from the specified URL.|Data Request
-|/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment|GET|expand=body.storage|Returns all comments in the blogposts from the specified URL. The value of `id` from the main request needs to be assigned to the `${LW_PARENT_DATA_KEY}` variable so the additional feature can insert that value when building the GET URL.  |Child Endpoint
-|/wiki/rest/api/content | GET |type=paget&start=0&limit=1&expand=body.storage |Returns all pages from the specified URL.|Data Request
-|/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment|GET|expand=body.storage|Returns all page comments from the specified URL. The value of `id` from the main request needs to be assigned to the `${LW_PARENT_DATA_KEY}` variable so the additional feature can insert that value when building the GET URL.|Child Endpoint
+|/wiki/rest/api/content|GET    |type=blogpost&start=0&limit=1&expand=body.storage|Returns all blogposts from the specified endpoint.|Root Request
+|/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment|GET|expand=body.storage|Returns all comments in the blogposts from the specified endpoint. The value of `id` from the main request needs to be assigned to the `${LW_PARENT_DATA_KEY}` variable so the additional feature can insert that value when building the GET URL.  |Child Request
+|/wiki/rest/api/content | GET |type=paget&start=0&limit=1&expand=body.storage |Returns all pages from the specified endpoint.|Root Request
+|/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment|GET|expand=body.storage|Returns all page comments from the specified endpoint. The value of `id` from the main request needs to be assigned to the `${LW_PARENT_DATA_KEY}` variable so the additional feature can insert that value when building the GET URL.|Child Request
 |=======================
 
 
@@ -83,10 +83,11 @@ The following terms are provided as a reference.
 |=======================
 
 |Term|Description
-|`Service Endpoints`|The list of endpoints (URLs) from which data is retrieved.
-|`Data Request`|A type of request used to retrieve data.
-|`Child Endpoint`|The type of request to retrieve additional information for the root data objects. It iterates over root data objects, and performs a request for each one.
+|`Service Endpoints`|The list of service endpoints where data is retrieved. Each service endpoint configures a root endpoint request.
+|`Root Request`|The type of request to retrieve data the root data objects.
+|`Child Request`|The type of request to retrieve additional information for the root data objects. It iterates over root data objects, and performs a request for each one.
 |`Root Response Mapping`|Defines the mapping between the response and data objects to be indexed.
+|`Child Response Mapping` |Defines the mapping between the child response and child data objects to be indexed.
 |`Data Path`|The path to access a specific data object within a response. For example, to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed.
 |`DATA ID`|The identifier key for the data object where the value is the solr-document's ID. If not provided, a random universally unique identifier (UUID) will be used.
 |`Parent Data Key`|Key to extract data from the root/parent response used in the subsequent request. The extracted value is used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example, endpoint: /api/path/${LW_PARENT_DATA_KEY}/additionalInfo.
