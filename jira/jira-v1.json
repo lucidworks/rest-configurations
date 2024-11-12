@@ -1,0 +1,116 @@
+{
+    "parserId": "rest_connector",
+    "created": "2024-07-18T00:37:31.216Z",
+    "coreProperties": {},
+    "modified": "2024-09-19T09:08:03.959Z",
+    "id": "rest-jira",
+    "type": "lucidworks.rest",
+    "properties": {
+        "serviceURL": "https://{add jira url}",
+        "authenticationMode": {
+            "basicAuth": {
+                "password": "xXx-Redacted-xXx",
+                "user": "add email address here!!!"
+            }
+        },
+        "serviceEndpoints": [
+            {
+                "childrenRequests": [
+                    {
+                        "dataRequest": {
+                            "endpoint": "/rest/api/2/issue/${LW_PARENT_DATA_KEY}/comment",
+                            "pagination": {
+                                "paginationByBatchSize": {
+                                    "paginationStopConditionValue": "[]",
+                                    "paginationStopConditionKey": "comments",
+                                    "batchSize": 50,
+                                    "indexStart": 0
+                                }
+                            },
+                            "httpMethod": "GET",
+                            "queries": [
+                                {
+                                    "queryKey": "startAt",
+                                    "queryValue": "${LW_INDEX_START}"
+                                },
+                                {
+                                    "queryKey": "maxResult",
+                                    "queryValue": "${LW_BATCH_SIZE}"
+                                }
+                            ]
+                        },
+                        "childResponseMapping": {
+                            "childDataId": "self",
+                            "childDataPath": "comments",
+                            "parentIdKey": "id"
+                        }
+                    },
+                    {
+                        "dataRequest": {
+                            "endpoint": "/rest/api/2/issue/${LW_PARENT_DATA_KEY}/worklog",
+                            "pagination": {
+                                "paginationByBatchSize": {
+                                    "paginationStopConditionValue": "[]",
+                                    "paginationStopConditionKey": "worklogs",
+                                    "batchSize": 50,
+                                    "indexStart": 0
+                                }
+                            },
+                            "httpMethod": "GET",
+                            "queries": [
+                                {
+                                    "queryKey": "startAt",
+                                    "queryValue": "${LW_INDEX_START}"
+                                },
+                                {
+                                    "queryKey": "maxResults",
+                                    "queryValue": "${LW_BATCH_SIZE}"
+                                }
+                            ]
+                        },
+                        "childResponseMapping": {
+                            "childDataId": "self",
+                            "childDataPath": "worklogs",
+                            "parentIdKey": "id"
+                        }
+                    }
+                ],
+                "rootRequest": {
+                    "dataRequest": {
+                        "endpoint": "/rest/api/2/search",
+                        "pagination": {
+                            "paginationByBatchSize": {
+                                "paginationStopConditionValue": "[]",
+                                "paginationStopConditionKey": "issues",
+                                "batchSize": 50,
+                                "indexStart": 0
+                            }
+                        },
+                        "httpMethod": "GET",
+                        "queries": [
+                            {
+                                "queryKey": "fields",
+                                "queryValue": "assignee,issuetype,priority,project,reporter,status,summary,updated,attachment"
+                            },
+                            {
+                                "queryKey": "startAt",
+                                "queryValue": "${LW_INDEX_START}"
+                            },
+                            {
+                                "queryKey": "maxResult",
+                                "queryValue": "${LW_BATCH_SIZE}"
+                            }
+                        ]
+                    },
+                    "rootResponseMapping": {
+                        "dataId": "self",
+                        "dataPath": "issues"
+                    }
+                }
+            }
+        ],
+        "collection": "{add collection name here}"
+    },
+    "pipeline": "{add pipeline name here}",
+    "connector": "lucidworks.rest"
+}
