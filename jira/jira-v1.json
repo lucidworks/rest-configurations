@@ -1,5 +1,5 @@
 {
-    "parserId": "rest_connector",
+    "parserId": "_system",
     "created": "2024-07-18T00:37:31.216Z",
     "coreProperties": {},
     "modified": "2024-09-19T09:08:03.959Z",
@@ -71,6 +71,18 @@
                         "childResponseMapping": {
                             "childDataId": "self",
                             "childDataPath": "worklogs",
+                            "parentIdKey": "id"
+                        }
+                    },
+                    {
+                        "dataRequest": {
+                            "endpoint": "/rest/api/2/attachment/content/${LW_PARENT_DATA_KEY}",
+                            "httpMethod": "GET"
+                        },
+                        "childResponseMapping": {
+                            "childDataId": "self",
+                            "binaryResponse": true,
+                            "parentNestedData": "issues[*].fields.attachment[*]",
                             "parentIdKey": "id"
                         }
                     }
