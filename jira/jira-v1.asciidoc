@@ -4,7 +4,8 @@ This documentation describes aspects of the Jira REST `jira-v1.json` file config
 
 The list of data the REST connector crawls using the jira REST configuration is:
 
-* Projects 
+* Projects
+* issues 
 * Comments
 * Worklogs  
 * Attachments
