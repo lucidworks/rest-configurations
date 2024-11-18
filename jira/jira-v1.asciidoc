@@ -73,7 +73,7 @@ The list of objects is retrieved in batches. Objects include spaces, pages, blog
 |=======================
 |Request type|Endpoint|HTTP operation |Query parameter |Description 
 
-|Root Request |/rest/api/2/search|GET    |fields=assignee,issuetype,priority,project,reporter,status,summary,updated,attachment&startAt=1&maxResults=50|Returns all jira issues with attachments.
+|Root Request |/rest/api/2/search|GET    |fields=assignee,issuetype,priority,project,reporter,status,summary,updated,attachment&startAt=1&maxResults=50|Returns all jira issues. Each issue contains its list of attachments metadata
 |Child Request |/rest/api/2/issue/${LW_PARENT_DATA_KEY}/comment|GET|startAt=0&maxResult=50|Returns all comments. The request requires the 'issue Id'. Internally, the plugin replaces the variable ${LW_PARENT_DATA_KEY} with the 'issue id', which value is extracted from the 'issue object' (root object) by setting the parentDataKey property.
 |Child Request |/rest/api/2/issue/${LW_PARENT_DATA_KEY}/worklog | GET |startAt=0&maxResult=50 |Returns all worklogs. The request requires the 'issue Id'. Internally, the plugin replaces the variable ${LW_PARENT_DATA_KEY} with the 'issue id', which value is extracted from the 'issue object' (root object) by setting the parentDataKey property.
 |Child Request |/rest/api/2/attachment/content/${LW_PARENT_DATA_KEY}|GET|-|Use root response containing attachment Id's to retrieve attachments. The following jsonpath is used to retrieve the attachment id's `fields.attachment[*]` 
