@@ -30,6 +30,10 @@ The Jira REST configuration supports the following crawl options:
 * Recrawl that rely on the strayContentDeletion feature from the connectors-service
 
 
+== Pipeline
+
+The default pipeline is set to `_system` but can changed to any pipeline base on index needs.
+
 == Pagination information
 
 This recipe is configured to use pagination by batch size. Needs to configure Query Params, and the property 'Pagination By BatchSize'
