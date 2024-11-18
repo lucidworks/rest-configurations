@@ -89,7 +89,7 @@ The following terms are provided as a reference.
 
 |Term|Description
 |Service Endpoints|The list of service endpoints from which the data is retrieved. Each service endpoint configures a root endpoint request.
-|Root Request|The type of request to retrieve data the root data objects.
+|Root Request|The type of request to retrieve a list of root data objects.
 |Child Request|The type of request to retrieve additional information for the root data objects. The child requests will be performed per each root data object.
 |Root Response Mapping|Defines the mapping between the response and data objects to be indexed.
 |Child Response Mapping |Defines the mapping between the child response and child data objects to be indexed.
