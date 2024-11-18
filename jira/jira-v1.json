@@ -117,6 +117,41 @@
                         "dataPath": "issues"
                     }
                 }
+            },
+            {
+                "rootRequest": {
+                    "dataRequest": {
+                        "endpoint": "/rest/api/2/project/search",
+                        "pagination": {
+                            "paginationByBatchSize": {
+                                "paginationStopConditionValue": "[]",
+                                "paginationStopConditionKey": "values",
+                                "batchSize": 50,
+                                "indexStart": 0
+                            }
+                        },
+                        "httpMethod": "GET",
+                        "queries": [
+                            {
+                                "queryKey": "expand",
+                                "queryValue": "description,lead,issueTypes,url,projectKeys,permissions,insight"
+                            },
+                            {
+                                "queryKey": "startAt",
+                                "queryValue": "${LW_INDEX_START}"
+                            },
+                            {
+                                "queryKey": "maxResults",
+                                "queryValue": "${LW_BATCH_SIZE}"
+                            }
+                        ]
+                    },
+                    "rootResponseMapping": {
+                        "dataId": "key",
+                        "binaryResponse": false,
+                        "dataPath": "values"
+                    }
+                }
             }
         ],
         "collection": "{add collection name here}"
