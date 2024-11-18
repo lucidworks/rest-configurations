@@ -90,7 +90,7 @@ The following terms are provided as a reference.
 |Term|Description
 |Service Endpoints|The list of service endpoints from which the data is retrieved. Each service endpoint configures a root endpoint request.
 |Root Request|The type of request to retrieve data the root data objects.
-|Child Request|The type of request to retrieve additional information for the root data objects. It iterates over root data objects, and performs a request for each one.
+|Child Request|The type of request to retrieve additional information for the root data objects. The child requests will be performed per each root data object.
 |Root Response Mapping|Defines the mapping between the response and data objects to be indexed.
 |Child Response Mapping |Defines the mapping between the child response and child data objects to be indexed.
 |Data Path|The path to access a specific data object within a response. For example, to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed. This property accepts JsonPath expressions e.g.objects, objects[*] or $.objects[*]
