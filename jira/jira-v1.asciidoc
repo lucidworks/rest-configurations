@@ -27,7 +27,7 @@ The Jira REST configuration supports the following crawl options:
 
 * Full crawl
 
-* Recrawl that uses the `rely on the strayContentDeletion` parameter
+* Recrawl that rely on the strayContentDeletion feature from the connectors-service
 
 
 == Pagination information
