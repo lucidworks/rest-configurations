@@ -1,8 +1,6 @@
 {
     "parserId": "_system",
-    "created": "2024-07-18T00:37:31.216Z",
     "coreProperties": {},
-    "modified": "2024-09-19T09:08:03.959Z",
     "id": "rest-jira",
     "type": "lucidworks.rest",
     "properties": {
@@ -82,7 +80,7 @@
                         "childResponseMapping": {
                             "childDataId": "self",
                             "binaryResponse": true,
-                            "parentNestedData": "issues[*].fields.attachment[*]",
+                            "parentNestedData": "fields.attachment[*]",
                             "parentIdKey": "id"
                         }
                     }
