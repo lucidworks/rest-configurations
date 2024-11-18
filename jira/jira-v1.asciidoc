@@ -16,8 +16,9 @@ The list of data the REST connector crawls using the jira REST configuration is:
 The Jira REST configuration supports:
 
 * Basic Authentication using the username and password from an Atlassian account. For more information, see link:https://developer.atlassian.com/cloud/confluence/basic-auth-for-rest-apis/[Basic auth for REST APIs | Atlassian Developer^].
-
 * API Token. For information about how to create a new API token, see link:https://id.atlassian.com/manage/api-tokens[API Tokens | Atlassian ID^].
+
+N.B. The API token is a requirement to authenticate the at Atlassian api. Instead of using the Atlassian account password, Use the token value for the password. 
 
 
 == Supported crawl options
