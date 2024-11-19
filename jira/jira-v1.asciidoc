@@ -39,12 +39,14 @@ The default pipeline is set to `_system` but can changed to any pipeline base on
 This recipe is configured to use pagination by batch size. Needs to configure Query Params, and the property 'Pagination By BatchSize'
 Query Params:
 
-* maxResults=${LW_BATCH_SIZE}, where ${LW_BATCH_SIZE} is a variable
-* startAt=${LW_INDEX_START}, where ${LW_INDEX_START} is a variable
+* maxResults=`${LW_BATCH_SIZE}`, where `${LW_BATCH_SIZE}` is a variable
+
+* startAt=`${LW_INDEX_START}`, where `${LW_INDEX_START}` is a variable
 
 Configure the 'Pagination By BatchSize' properties:
-* IndexStart: The starting point. Set to 0 because the Atlassian pagination is zero-index-base. From the queries above, it replaces variable ${LW_INDEX_START}, the plugin internally increases the value of the indexStart ensuring each page is requested with an updated start-point.
-* BatchSize: The number of elements to retrieve. Set to 50 by default. From the queries above, it replaces variable ${LW_BATCH_SIZE}
+
+* IndexStart: The starting point. Set to 0 because the Atlassian pagination is zero-index-base. From the queries above, it replaces variable `${LW_INDEX_START}`, the plugin internally increases the value of the indexStart ensuring each page is requested with an updated start-point.
+* BatchSize: The number of elements to retrieve. Set to 50 by default. From the queries above, it replaces variable `${LW_BATCH_SIZE}`
 * Stop Condition Key: Reference the “key” in the response, that needs to be met in order to stop the pagination. To paginate issues, it must be “issues”, to paginate projects it must be 'values'
 * Stop Condition Value: Reference the “value” in the response, that needs to be met in order to stop the pagination. For the jira config, to stop pagination the list of objects retrieved must be empty, then the stop condition should be []
 
@@ -101,4 +103,3 @@ The following terms are provided as a reference.
 |Custom Solr Field|The field to use to store the child data within the root data objects. If not set, the child data object will be indexed as an individual solr-documents.
 
 |=======================
-
