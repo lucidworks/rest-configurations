@@ -4,7 +4,7 @@
     "id": "confluence",
     "type": "lucidworks.rest",
     "properties": {
-        "serviceURL": "https://{add confluence instance}",
+        "serviceURL": "https://{add confluence url}",
         "authenticationMode": {
             "basicAuth": {
                 "password": "xXx-Redacted-xXx",
@@ -63,8 +63,8 @@
                 }
             }
         ],
-        "collection": "{add collection here}"
+        "collection": "{add collection name here}"
     },
-    "pipeline": "{add pipeline name}",
+    "pipeline": "{add pipeline name here}",
     "connector": "lucidworks.rest"
 }
