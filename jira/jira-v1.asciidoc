@@ -98,8 +98,8 @@ The following terms are provided as a reference.
 |Data Path|The path to access a specific data object within a response. For example, to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed. This property accepts JsonPath expressions e.g.objects, objects[*] or $.objects[*]
 |DATA ID|The identifier key for the data objects extracted with 'Data Path', this value will be used to build the solr-document's ID. If not provided, a random UUID will be used. This property accepts JsonPath expressions.
 |Parent Data Key|Key to extract data from the root/parent response used in the subsequent request. The extracted value is used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example, endpoint: /api/path/${LW_PARENT_DATA_KEY}/additionalInfo.
+|Parent Nested Data Path| The path to a nested object within the Parent Data. When this property is set, the 'Parent Data Key' should point to the 'id' or 'key' of the nested object. If the nested object is a List, this will be iterated to perform a request per each one.
 |Child Data Path|The path to access a specific object within a child response. For example, to access a list of elements named with the key `objects`, the ChildDataPath would be `objects`. If not provided, the entire response body will be indexed.
 |Child Data ID|The identifier key for the child data object, where the value is the solr-document's ID. Enter this when the `Custom Solr Field` is empty, otherwise the solr-document's ID will be a random universally unique identifier (UUID).
 |Custom Solr Field|The field to use to store the child data within the root data objects. If not set, the child data object will be indexed as an individual solr-documents.
-
 |=======================
