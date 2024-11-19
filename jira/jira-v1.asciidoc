@@ -55,7 +55,7 @@ Configure the 'Pagination By BatchSize' properties:
 
 The Jira REST configuration variables used are:
 
-* `${LW_BATCH_SIZE}` - This variable is used to set the `limit` query parameter, which controls the number of results that are returned in the response for both `blogpost` and `pages`.
+* `${LW_BATCH_SIZE}` - Used with pagination feature. This variable is used to set the `limit` query parameter, which controls the number of results that are returned in the response for both `blogpost` and `pages`.
 
 * `${LW_INDEX_START}` - Used with pagination feature. This variable is used to set the startAt query parameter, which is used to traverse the pagination. Jira pagination is zero-index-based. This means the first page number is 0.
 
