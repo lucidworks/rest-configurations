@@ -3,6 +3,7 @@
 This documentation describes aspects of the Jira REST `jira-v1.json` file configuration such as the authentication methods, data crawled and retrieved, pagination information, variables used, and endpoints used. Terminology is also provided as a reference.
 
 The rest-connector will index each jira object listed as a seperate solr document:
+
 * Projects
 * issues 
 * Comments
