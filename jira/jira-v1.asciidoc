@@ -2,10 +2,10 @@
 
 This documentation describes aspects of the Jira REST `jira-v1.json` file configuration such as the authentication methods, data crawled and retrieved, pagination information, variables used, and endpoints used. Terminology is also provided as a reference.
 
-The rest-connector will index each jira object listed as a seperate solr document:
+The rest-connector will index each jira object listed as a separate solr document:
 
 * Projects
-* issues 
+* Issues
 * Comments
 * Worklogs  
 * Attachments
@@ -30,9 +30,9 @@ The Jira REST configuration supports the following crawl options:
 * Recrawl that rely on the strayContentDeletion feature from the connectors-service
 
 
-== Pipeline
+== Parser
 
-The default pipeline is set to `_system` but can changed to any pipeline base on index needs.
+The default parser is set to `_system` but can be changed to any parser based on index needs.
 
 == Pagination information
 
@@ -73,10 +73,10 @@ The list of objects is retrieved in batches. Objects include projects, issues, w
 
 [options="header",cols="1m,1,1m,1,1"]
 |=======================
-|Request type|Endpoint|HTTP operation |Query parameter |Description 
+|Request type|Endpoint|HTTP operation |Query parameter |Description
 
 |Root Request |/rest/api/2/search|GET    |fields=assignee,issuetype,priority,project,reporter,status,summary,updated,attachment&startAt=1&maxResults=50|Returns all jira issues. Each issue contains its list of attachments metadata
-|Root Request|/rest/api/2/project/search|GET|description,lead,issueTypes,url,projectKeys,permissions,insight|Return all jira projects. Each jira project will index as seperate solr document.
+|Root Request|/rest/api/2/project/search|GET|description,lead,issueTypes,url,projectKeys,permissions,insight|Return all jira projects.
 |Child Request |/rest/api/2/issue/`${LW_PARENT_DATA_KEY}`/comment|GET|startAt=0&maxResult=50| Returns all comments. The request requires the 'issue Id'. Internally, the plugin replaces the variable `${LW_PARENT_DATA_KEY}` with the 'issue id', which value is extracted from the 'issue object' (root object) by setting the parentDataKey property.
 |Child Request |/rest/api/2/issue/`${LW_PARENT_DATA_KEY}`/worklog | GET |startAt=0&maxResult=50 | Returns all worklogs. The request requires the 'issue Id'. Internally, the plugin replaces the variable `${LW_PARENT_DATA_KEY}` with the 'issue id', which value is extracted from the 'issue object' (root object) by setting the parentDataKey property.
 |Child Request |/rest/api/2/attachment/content/`${LW_PARENT_DATA_KEY}`|GET|-|Download the attachment content. The request requires the 'attachment Id'. Internally, the plugin replaces the variable `${LW_PARENT_DATA_KEY}` with the 'attachment id', which value is extracted in two steps: 1) setting prop parentNestedDataPath= fields.attachment[*] to extract the attachment metadata list from the issue object 2) setting prop parentDataKey=id to extract the 'id' from each attachment metadata. The download request will be performed per each attachment metadata found 
@@ -96,8 +96,8 @@ The following terms are provided as a reference.
 |Child Request|The type of request to retrieve additional information for the root data objects. The child requests will be performed per each root data object.
 |Root Response Mapping|Defines the mapping between the response and data objects to be indexed.
 |Child Response Mapping |Defines the mapping between the child response and child data objects to be indexed.
-|Data Path|The path to access a specific data object within a response. For example, to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed. This property accepts JsonPath expressions e.g.objects, objects[*] or $.objects[*]
-|DATA ID|The identifier key for the data objects extracted with 'Data Path', this value will be used to build the solr-document's ID. If not provided, a random UUID will be used. This property accepts JsonPath expressions.
+|Data Path|The path to access a specific data object within a response. For example, to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed. This property accepts JsonPath expressions e.g. `objects`, `objects[*]`.
+|Data ID|The identifier key for the data objects extracted with 'Data Path', this value will be used to build the solr-document's ID. If not provided, a random UUID will be used. This property accepts JsonPath expressions.
 |Parent Data Key|Key to extract data from the root/parent response used in the subsequent request. The extracted value is used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example, endpoint: /api/path/${LW_PARENT_DATA_KEY}/additionalInfo.
 |Parent Nested Data Path| The path to a nested object within the Parent Data. When this property is set, the 'Parent Data Key' should point to the 'id' or 'key' of the nested object. If the nested object is a List, this will be iterated to perform a request per each one.
 |Child Data Path|The path to access a specific object within a child response. For example, to access a list of elements named with the key `objects`, the ChildDataPath would be `objects`. If not provided, the entire response body will be indexed.
