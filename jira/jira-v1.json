@@ -1,0 +1,161 @@
+{
+    "parserId": "_system",
+    "coreProperties": {},
+    "id": "rest-jira",
+    "type": "lucidworks.rest",
+    "properties": {
+        "serviceURL": "https://{add jira url}",
+        "authenticationMode": {
+            "basicAuth": {
+                "password": "xXx-Redacted-xXx",
+                "user": "add email address here!!!"
+            }
+        },
+        "serviceEndpoints": [
+            {
+                "childrenRequests": [
+                    {
+                        "dataRequest": {
+                            "endpoint": "/rest/api/2/issue/${LW_PARENT_DATA_KEY}/comment",
+                            "pagination": {
+                                "paginationByBatchSize": {
+                                    "paginationStopConditionValue": "[]",
+                                    "paginationStopConditionKey": "comments",
+                                    "batchSize": 50,
+                                    "indexStart": 0
+                                }
+                            },
+                            "httpMethod": "GET",
+                            "queries": [
+                                {
+                                    "queryKey": "startAt",
+                                    "queryValue": "${LW_INDEX_START}"
+                                },
+                                {
+                                    "queryKey": "maxResult",
+                                    "queryValue": "${LW_BATCH_SIZE}"
+                                }
+                            ]
+                        },
+                        "childResponseMapping": {
+                            "childDataId": "self",
+                            "childDataPath": "comments",
+                            "parentIdKey": "id"
+                        }
+                    },
+                    {
+                        "dataRequest": {
+                            "endpoint": "/rest/api/2/issue/${LW_PARENT_DATA_KEY}/worklog",
+                            "pagination": {
+                                "paginationByBatchSize": {
+                                    "paginationStopConditionValue": "[]",
+                                    "paginationStopConditionKey": "worklogs",
+                                    "batchSize": 50,
+                                    "indexStart": 0
+                                }
+                            },
+                            "httpMethod": "GET",
+                            "queries": [
+                                {
+                                    "queryKey": "startAt",
+                                    "queryValue": "${LW_INDEX_START}"
+                                },
+                                {
+                                    "queryKey": "maxResults",
+                                    "queryValue": "${LW_BATCH_SIZE}"
+                                }
+                            ]
+                        },
+                        "childResponseMapping": {
+                            "childDataId": "self",
+                            "childDataPath": "worklogs",
+                            "parentIdKey": "id"
+                        }
+                    },
+                    {
+                        "dataRequest": {
+                            "endpoint": "/rest/api/2/attachment/content/${LW_PARENT_DATA_KEY}",
+                            "httpMethod": "GET"
+                        },
+                        "childResponseMapping": {
+                            "childDataId": "self",
+                            "binaryResponse": true,
+                            "parentNestedData": "fields.attachment[*]",
+                            "parentIdKey": "id"
+                        }
+                    }
+                ],
+                "rootRequest": {
+                    "dataRequest": {
+                        "endpoint": "/rest/api/2/search",
+                        "pagination": {
+                            "paginationByBatchSize": {
+                                "paginationStopConditionValue": "[]",
+                                "paginationStopConditionKey": "issues",
+                                "batchSize": 50,
+                                "indexStart": 0
+                            }
+                        },
+                        "httpMethod": "GET",
+                        "queries": [
+                            {
+                                "queryKey": "fields",
+                                "queryValue": "assignee,issuetype,priority,project,reporter,status,summary,updated,attachment"
+                            },
+                            {
+                                "queryKey": "startAt",
+                                "queryValue": "${LW_INDEX_START}"
+                            },
+                            {
+                                "queryKey": "maxResult",
+                                "queryValue": "${LW_BATCH_SIZE}"
+                            }
+                        ]
+                    },
+                    "rootResponseMapping": {
+                        "dataId": "key",
+                        "dataPath": "issues"
+                    }
+                }
+            },
+            {
+                "rootRequest": {
+                    "dataRequest": {
+                        "endpoint": "/rest/api/2/project/search",
+                        "pagination": {
+                            "paginationByBatchSize": {
+                                "paginationStopConditionValue": "[]",
+                                "paginationStopConditionKey": "values",
+                                "batchSize": 50,
+                                "indexStart": 0
+                            }
+                        },
+                        "httpMethod": "GET",
+                        "queries": [
+                            {
+                                "queryKey": "expand",
+                                "queryValue": "description,lead,issueTypes,url,projectKeys,permissions,insight"
+                            },
+                            {
+                                "queryKey": "startAt",
+                                "queryValue": "${LW_INDEX_START}"
+                            },
+                            {
+                                "queryKey": "maxResults",
+                                "queryValue": "${LW_BATCH_SIZE}"
+                            }
+                        ]
+                    },
+                    "rootResponseMapping": {
+                        "dataId": "key",
+                        "binaryResponse": false,
+                        "dataPath": "values"
+                    }
+                }
+            }
+        ],
+        "collection": "{add collection name here}"
+    },
+    "pipeline": "{add pipeline name here}",
+    "connector": "lucidworks.rest"
+}
