@@ -59,7 +59,7 @@ The Jira REST configuration variables used are:
 
 * `${LW_INDEX_START}` - Used with pagination feature. This variable is used to set the startAt query parameter, which is used to traverse the pagination. Jira pagination is zero-index-based. This means the first page number is 0.
 
-* `${LW_PARENT_DATA_KEY}` - Used with pagination feature. This variable is used to set the maxResults query parameter, which controls the number of results that are returned in the response for projects, issues, comments, worklogs
+* `${LW_PARENT_DATA_KEY}` - Used with Child Request Configuration. This variable is replaced with the 'id' extracted from root object, by setting the property parentDataKey. The jira use case indicates this variable can be added the URL to execute a GET request to retrieve comments, worklogs and attachments from issues
 
 
 == Endpoints to configure with the Jira REST connector
