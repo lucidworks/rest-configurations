@@ -1,0 +1,172 @@
+{
+  "parserId": "_system",
+  "coreProperties": {},
+  "id": "rest-alfresco",
+  "type": "lucidworks.rest",
+  "properties": {
+    "serviceURL": "https://{add alfresco url}",
+    "authenticationMode": {
+      "basicAuth": {
+        "password": "xXx-Redacted-xXx",
+        "user": "{add username here!!!}"
+      }
+    },
+    "requestConfigurations": [
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "objectType": "INITIAL_FOLDER"
+          },
+          "requestConfiguration": {
+            "endpoint": "/alfresco/api/-default-/public/alfresco/versions/1/nodes/-root-/children",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "list.entries",
+                "batchSize": 50,
+                "indexStart": 0
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "include",
+                "queryValue": "path,properties"
+              },
+              {
+                "queryKey": "where",
+                "queryValue": "(isFolder=true)"
+              },
+              {
+                "queryKey": "skipCount",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "maxItems",
+                "queryValue": "${LW_BATCH_SIZE}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "entry.id",
+            "binaryResponse": false,
+            "dataPath": "list.entries",
+            "parentIdKey": ""
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": true,
+          "linkRequest": {
+            "parentObjectType": "INITIAL_FOLDER",
+            "objectType": "FOLDER"
+          },
+          "requestConfiguration": {
+            "endpoint": "/alfresco/api/-default-/public/alfresco/versions/1/nodes/${LW_PARENT_DATA_KEY}/children",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "list.entries",
+                "batchSize": 50,
+                "indexStart": 0
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "include",
+                "queryValue": "path,properties"
+              },
+              {
+                "queryKey": "where",
+                "queryValue": "(isFolder=true)"
+              },
+              {
+                "queryKey": "skipCount",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "maxItems",
+                "queryValue": "${LW_BATCH_SIZE}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "entry.id",
+            "binaryResponse": false,
+            "dataPath": "list.entries",
+            "parentIdKey": "entry.id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "FOLDER",
+            "objectType": "FILE"
+          },
+          "requestConfiguration": {
+            "endpoint": "/alfresco/api/-default-/public/alfresco/versions/1/nodes/${LW_PARENT_DATA_KEY}/children",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "list.entries",
+                "batchSize": 50,
+                "indexStart": 0
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "where",
+                "queryValue": "(isFile=true)"
+              },
+              {
+                "queryKey": "include",
+                "queryValue": "path,properties"
+              },
+              {
+                "queryKey": "skipCount",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "maxItems",
+                "queryValue": "${LW_BATCH_SIZE}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "entry.id",
+            "binaryResponse": false,
+            "dataPath": "list.entries",
+            "parentIdKey": "entry.id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "FILE",
+            "objectType": "FILE_DOWNLOAD"
+          },
+          "requestConfiguration": {
+            "endpoint": "/alfresco/api/-default-/public/alfresco/versions/1/nodes/${LW_PARENT_DATA_KEY}/content",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "binaryResponse": true,
+            "parentIdKey": "entry.id"
+          }
+        }
+      }
+    ],
+    "serviceEndpoints": [],
+    "collection": "{add collection name here}"
+  },
+  "pipeline": "{add pipeline name here}",
+  "connector": "lucidworks.rest"
+}
