@@ -14,6 +14,6 @@ curl -u username:password --location 'https://**fusion domain!**/api/apps/**fusi
 --header 'Content-Type: application/json' \
 --data-raw 'add json here'
 ```
-3. Log in to the Fusion admin and configure the relevant information, such as credentials, URL for the instance, etc.
+3. Log in to the Fusion admin and configure the relevant information, such as credentials, URL for the instance, collection, pipeline, parser etc.
 
 4. Now you're ready to go! Happy crawling!
