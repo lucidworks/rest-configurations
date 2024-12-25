@@ -111,7 +111,7 @@ The following terms are provided as a reference.
 
 
 == Exclude Property
-TODO
+The exclusion property is a key-value pair, where the key represents the name of the exclusion entry, and the value contains the corresponding regular expression.
 
 == Notes:
 
