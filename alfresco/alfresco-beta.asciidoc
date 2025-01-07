@@ -66,8 +66,8 @@ Pagination by Batch Size is configured per Request. Needs to configure propertie
 |=======================
 |Request type | ObjectType | Parent ObjectType | Endpoint| HTTP operation | Query parameters | Description
 |Root Request | INITIAL_FOLDER | |`/alfresco/api/-default-/public/alfresco/versions/1/nodes/-root-/children`| GET |`include=path,properties&skipCount=${LW_INDEX_START}&maxItems=${LW_BATCH_SIZE}&where=(isFolder=true`|Returns the folders from -root- folder (Company Home)
-|Child Request| FOLDER |INITIAL_FOLDER |`/alfresco/api/-default-/public/alfresco/versions/1/nodes/${LW_PARENT_DATA_KEY}/children`|GET|`include=path,properties&skipCount=${LW_INDEX_START}&maxItems=${LW_BATCH_SIZE}&where=(isFolder=true)`|Return children folders from each parent folder retrieved with the previous request 'INITIAL_FOLDER'. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent folder, which is extracted by setting the property `Response Handling -> parentDataKey=entry.id`
-|Child Request | FILE |FOLDER |`/alfresco/api/-default-/public/alfresco/versions/1/nodes/${LW_PARENT_DATA_KEY}/children`|GET |`include=path,properties&skipCount=${LW_INDEX_START}&maxItems=${LW_BATCH_SIZE}&where=(isFile=true)`|Returns children files from each parent folder retrieved with the previous request 'FOLDER'. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent folder, which is extracted by setting the property `Response Handling -> parentDataKey=entry.id`. This request enable the property 'Recursive Request'.
+|Child Request| FOLDER |INITIAL_FOLDER |`/alfresco/api/-default-/public/alfresco/versions/1/nodes/${LW_PARENT_DATA_KEY}/children`|GET|`include=path,properties&skipCount=${LW_INDEX_START}&maxItems=${LW_BATCH_SIZE}&where=(isFolder=true)`|Return children folders from each parent folder retrieved with the previous request 'INITIAL_FOLDER'. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent folder, which is extracted by setting the property `Response Handling -> parentDataKey=entry.id`. This request enable the property 'Recursive Request'.
+|Child Request | FILE |FOLDER |`/alfresco/api/-default-/public/alfresco/versions/1/nodes/${LW_PARENT_DATA_KEY}/children`|GET |`include=path,properties&skipCount=${LW_INDEX_START}&maxItems=${LW_BATCH_SIZE}&where=(isFile=true)`|Returns children files from each parent folder retrieved with the previous request 'FOLDER'. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent folder, which is extracted by setting the property `Response Handling -> parentDataKey=entry.id`. This request enable the property 'Skip Indexation'.
 |Child Request | FILE_DOWNLOAD |FILE |`/alfresco/api/-default-/public/alfresco/versions/1/nodes/${LW_PARENT_DATA_KEY}/content` | GET | |Download the content from each file retrieved with the previous request 'FILE'. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the file, which is extracted by setting the property `Response Handling -> parentDataKey=entry.id`
 |=======================
 
@@ -85,6 +85,70 @@ Per request, configure the property *Response Handling* to set up how to parse t
 * Enable by setting the property `Response Handling -> Parse Binary Data` (`binaryResponse` in the alfresco-beta.json` file). Send the whole response to the Fusion Parsers. If disabled (default), the response is parsed as a JSON object
 * This parsing is configured for request: FILE_DOWNLOAD
 
+== Skip Indexation of Objects
+
+When enabled, the response is not indexed. Useful when requests of objects are needed only to discover child-objects, without need to index the object itself.
+
+* For Alfresco Configuration:
+- Given a parent Request FILE, to retrieve a list of files metadata. The request is needed to discover the IDs of files to be downloaded in a following request.
+- Given a child  Request FILE_DOWNLOAD to download the binary content from the files found previously
+- Both request will index two solr-docs that represents the same file: 1) doc the file-metadata only, 2) doc with the file-metadata joined with the file-content.
+```
+1) doc the file-metadata only (Request FILE)
+
+id: "serverURL_/<parent-request>/fileID"
+size_i: 10
+author_s: "any"
+_lw_rest_object_type_s: "file"
+```
+
+```
+2) doc with the file-metadata joined with the file-content (Request FILE_DOWNLOAD)
+
+id: "serverURL_/<child-request>/fileID_binary"
+size_i: 10
+author_s: "any"
+body_s: "body of txt"
+_lw_rest_object_type_s: "file_download"
+```
+- There is no need to index the first solr-doc. To avoid indexing this, the property *'Skip Indexation'* for the Request FILE is enabled in the 'alfresco-beta.json' file.
+- If needed to avoid indexing another objects, enable the property *'Skip Indexation'* in the corresponding request configuration.
+
+
+== Limit Documents
+
+=== Exclude by RegEx:
+
+Allows to specify a list of key-value pair to exclude objects from the fetching:
+
+** Key: Reference the field name of the object to exclude. It also accepts JsonPath expressions for navigating through nested object, e.g. objects.nested.path
+** Value: The value contains a regular expression that will be matched against the field value in the object. If the match succeeds, the entire object will be exclude
+
+For Alfresco Rest Configuration, this property can be used to exclude objects that matches values from certain fields:
+
+** e.g. Exclude objects from the field 'entry.path.name'. Let's consider the Alfresco object named "testFolder" belonging to the path /Company Home/Sites/sample1.
+```
+{
+    "entry": {
+        "path": {
+            "name": "/Company Home/Sites/sample1",
+            "isComplete": true,
+            "elements": [...]
+        },
+        "isFolder": true,
+        "isFile": false,
+        "name": "testFolder",
+        "id": "c2bf6e7d-db3e-4f21-850a-90389fe1d2e1",
+```
+In order to exclude all objects under the path `'/Company Home/Sites/sample1'`, add a key-value pair to the exclusion list:
+
+** Key: entry.path.name (points to the field containing the path)
+** Value: /Company Home/Sites/sample1 (regular expression to match the path)
+
+More key-value pairs can be added using different keys, or the same key
+
+image::resources/ExcludeByRegexSample.png[width=693]
+
 == Terminology
 
 The following terms are provided as a reference.
@@ -101,6 +165,7 @@ The following terms are provided as a reference.
 |Root Request|The request to retrieve the initial objects.
 |Child Request|The type of request to retrieve additional information for the root data objects. The child requests will be performed per each root data object.
 |Recursive Request| When enabled, extra-requests are performed to retrieve nested objects within the objects found with the current-request. For example, the request ObjectType=FOLDER enable this property, then extra-request is made per Folder found to retrieve NestedFolders. This process will continue until no more NestedFolders are found.
+|Skip Indexation|When enabled, the response is not indexed. Useful when requests of objects are needed only to discover child-objects, without need to index the object itself.
 
 |Response Handling| The responseConfiguration Defines the mapping between the response and data objects to be indexed.
 |Data Path|The path to access a specific data object within a response. For example, to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed. This property accepts JsonPath expressions e.g. `objects`, `objects[*]`, or `list.entries` to extract the list of alfresco objects.
@@ -108,11 +173,3 @@ The following terms are provided as a reference.
 |Parent Data Key|Only configure with Child Requests. Set the 'key' to extract the ID of the root/parent response, which value is used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example, /alfresco/api/-default-/public/alfresco/versions/1/nodes/`${LW_PARENT_DATA_KEY}`/content
 |Parse Binary Data| Enable to send the whole response to the Fusion Parsers. If enabled, properties `Data Path, Data ID` will be ignored and pagination will not happen.
 |=======================
-
-
-== Exclude Property
-The exclusion property is a key-value pair, where the key represents the name of the exclusion entry, and the value contains the corresponding regular expression.
-
-== Notes:
-
-- With the current rest-connector behavior, for a same file two solr-docs are indexed: 1) doc the file-metadata only, 2 ) doc with the file-metadata joined with the file-content. Both docs have different IDs

@@ -138,6 +138,7 @@
               }
             ]
           },
+          "skipIndexation": true,
           "responseConfiguration": {
             "dataId": "entry.id",
             "binaryResponse": false,
