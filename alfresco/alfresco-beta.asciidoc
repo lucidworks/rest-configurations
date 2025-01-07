@@ -87,7 +87,7 @@ Per request, configure the property *Response Handling* to set up how to parse t
 
 == Skip Indexation of Objects
 
-When enabled, the response is not indexed. Useful when requests of objects are needed only to discover child-objects, without need to index the object itself.
+When enabled, the response is not indexed. This is useful when objects are requested solely to discover their child objects, without needing to index the parent object itself.
 
 * For Alfresco Configuration:
 - Given a parent Request FILE, to retrieve a list of files metadata. The request is needed to discover the IDs of files to be downloaded in a following request.
