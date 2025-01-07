@@ -119,10 +119,10 @@ _lw_rest_object_type_s: "file_download"
 
 === Exclude by RegEx:
 
-Allows to specify a list of key-value pair to exclude objects from the fetching:
+Allows specifying a list of key-value pairs to exclude objects from indexing:
 
 ** Key: Reference the field name of the object to exclude. It also accepts JsonPath expressions for navigating through nested object, e.g. objects.nested.path
-** Value: The value contains a regular expression that will be matched against the field value in the object. If the match succeeds, the entire object will be exclude
+** Value: The value contains a regular expression that will be matched against the field value in the object. If the match succeeds, the entire object will be excluded.
 
 For Alfresco Rest Configuration, this property can be used to exclude objects that matches values from certain fields:
 
