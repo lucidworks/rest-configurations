@@ -124,7 +124,7 @@ Allows specifying a list of key-value pairs to exclude objects from indexing:
 ** Key: Reference the field name of the object to exclude. It also accepts JsonPath expressions for navigating through nested object, e.g. objects.nested.path
 ** Value: The value contains a regular expression that will be matched against the field value in the object. If the match succeeds, the entire object will be excluded.
 
-For Alfresco Rest Configuration, this property can be used to exclude objects that matches values from certain fields:
+For Alfresco Rest Configuration, this property can be used to exclude objects that matches values from certain fields.
 
 ** e.g. Exclude objects from the field 'entry.path.name'. Let's consider the Alfresco object named "testFolder" belonging to the path /Company Home/Sites/sample1.
 ```
@@ -148,6 +148,53 @@ In order to exclude all objects under the path `'/Company Home/Sites/sample1'`, 
 More key-value pairs can be added using different keys, or the same key
 
 image::resources/ExcludeByRegexSample.png[width=693]
+
+=== Exclude by File Size:
+
+Allows specifying minimum and maximum sizes that will exclude all files that do not meet the requirements.
+
+** Key: Reference the field name of the object with the file size. This property also accepts JsonPath expressions e.g. objects.nested.path
+** Minimum File Size: Used for excluding files with sizes smaller than the configured value.
+** Maximum File Size: Used for excluding files with sizes larger than the configured value. Set to -1 when there is no limit
+
+For the Alfresco Rest Configuration, this property can be used to exclude files that is above or below a certain size.
+
+** For example: Let’s consider  this sample snippet from an Alfreco response
+```
+                "entry": {
+                    "createdAt": "2011-03-03T10:31:30.596+0000",
+                    "isFolder": false,
+                    "isFile": true,
+                    "createdByUser": {
+                        "id": "mjackson",
+                        "displayName": "Mike Jackson"
+                    },
+                    "modifiedAt": "2011-03-03T10:31:31.651+0000",
+                    "modifiedByUser": {
+                        "id": "mjackson",
+                        "displayName": "Mike Jackson"
+                    },
+                    "name": "Project Objectives.ppt",
+                    "id": "5515d3e1-bb2a-42ed-833c-52802a367033",
+                    "nodeType": "cm:content",
+                    "content": {
+                        "mimeType": "application/vnd.ms-powerpoint",
+                        "mimeTypeName": "Microsoft PowerPoint",
+                        "sizeInBytes": 2117632,
+                        "encoding": "UTF-8"
+                    },
+                    "parentId": "38745585-816a-403f-8005-0a55c0aec813"
+                }
+```
+You can specify the path to the property that has the size, as well as what the minimum and maximum sizes should be. Therefore:
+
+- Set `key` = `entry.content.sizeInBytes`
+- Then set `minimum`, all sizes below the minimum will be excluded.
+- Then set `maximum`, all sizes above the maximum will be excluded (Set to -1 when there should be no
+
+Example of configuration based on the above snippet to only index files of 2117632 bytes and below.
+
+image::resources/ExcludeByFileSizeSample.png[width=693]
 
 == Terminology
 
