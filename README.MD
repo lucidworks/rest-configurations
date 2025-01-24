@@ -17,3 +17,7 @@ curl -u username:password --location 'https://**fusion domain!**/api/apps/**fusi
 3. Log in to the Fusion admin and configure the relevant information, such as credentials, URL for the instance, etc.
 
 4. Now you're ready to go! Happy crawling!
+
+## Contributing
+
+All are welcome to contribute to this repository. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidance on how to contribute.
