@@ -56,6 +56,5 @@ git push origin BRANCH_NAME
 
 8. Open a Pull Request (PR). 
 
-* In this REST Configurations repository, click the *Pull requests* tab and click the blue underlined text that states *compare across forks*. On the right, select your forked repository and branch name.
-* Provide a title and description of your changes.
-* Submit the PR.
+* In this REST Configurations repository, if you see the yellow box with your branch, click *Compare and pull request*. If you do not see that box, you can click the *Pull requests* tab, click *New pull request*, and use *base: main* along with *compare: YOUR_BRANCH*.
+* Submit the PR by clicking *Create pull request*.
