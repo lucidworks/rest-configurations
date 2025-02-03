@@ -1,8 +1,8 @@
 = Alfresco REST Configuration
 
-This documentation describes aspects of the Alfresco REST file configuration `alfresco-beta.json`, such as the authentication, data fetched, requests configured (endpoints, query params, pagination) and variables needed. Terminology is also provided as a reference.
+This documentation describes aspects of the Alfresco REST file configuration `alfresco-v1.json`, such as the authentication, data fetched, requests configured (endpoints, query params, pagination) and variables needed. Terminology is also provided as a reference.
 
-- The `alfresco-beta.json` is configured to retrieve the initial folders from the root folder `-root-` (Company Home) and then retrieve the folders, nestedFolders and files.
+- The `alfresco-v1.json` is configured to retrieve the initial folders from the root folder `-root-` (Company Home) and then retrieve the folders, nestedFolders and files.
 - The following objects are indexed into separate solr document:
 * Folders (this also include the 'Sites' folder)
 * Files
@@ -60,7 +60,7 @@ Pagination by Batch Size is configured per Request. Needs to configure propertie
 == Endpoints Configuration with Alfresco REST connector
 
 * The following table describes the Alfresco REST connector endpoints needed to retrieve the files and folders, and how those are configured with the rest-connector.
-* Each requests in configured under the property *List of Requests Configuration* (`requestConfigurations` in the alfresco-beta.json` file)
+* Each requests in configured under the property *List of Requests Configuration* (`requestConfigurations` in the alfresco-v1.json` file)
 
 [cols="1,1,1,1,1,1,1",options="header"]
 |=======================
@@ -73,7 +73,7 @@ Pagination by Batch Size is configured per Request. Needs to configure propertie
 
 == Response Parsing Configuration
 
-Per request, configure the property *Response Handling* to set up how to parse the response (`responseConfiguration` in the alfresco-beta.json` file)
+Per request, configure the property *Response Handling* to set up how to parse the response (`responseConfiguration` in the alfresco-v1.json` file)
 
 === Plugin Parsing:
 
@@ -82,7 +82,7 @@ Per request, configure the property *Response Handling* to set up how to parse t
 * Properties `Response Handling -> Data ID, Data Path`, Parent Data Key can be configured to extract certain information from the Objects parsed (see section *Terminology* for more information
 
 === Binary Parsing:
-* Enable by setting the property `Response Handling -> Parse Binary Data` (`binaryResponse` in the alfresco-beta.json` file). Send the whole response to the Fusion Parsers. If disabled (default), the response is parsed as a JSON object
+* Enable by setting the property `Response Handling -> Parse Binary Data` (`binaryResponse` in the alfresco-v1.json` file). Send the whole response to the Fusion Parsers. If disabled (default), the response is parsed as a JSON object
 * This parsing is configured for request: FILE_DOWNLOAD
 
 == Skip Indexation of Objects
@@ -111,7 +111,7 @@ author_s: "any"
 body_s: "body of txt"
 _lw_rest_object_type_s: "file_download"
 ```
-- There is no need to index the first solr-doc. To avoid indexing this, the property *'Skip Indexation'* for the Request FILE is enabled in the 'alfresco-beta.json' file.
+- There is no need to index the first solr-doc. To avoid indexing this, the property *'Skip Indexation'* for the Request FILE is enabled in the 'alfresco-v1.json' file.
 - If needed to avoid indexing another objects, enable the property *'Skip Indexation'* in the corresponding request configuration.
 
 
