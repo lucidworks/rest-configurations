@@ -1,0 +1,247 @@
+{
+  "parserId": "_system",
+  "pipeline": "{add pipeline here}",
+  "coreProperties": {},
+  "id": "rest-jive",
+  "type": "lucidworks.rest",
+  "properties": {
+    "collection": "{add collection here}",
+    "serviceURL": "{add jive url}",
+    "authenticationMode": {
+      "basicAuth": {
+        "password": "xXx-Redacted-xXx",
+        "user": "{add email address here!!!}"
+      }
+    },
+    "requestConfigurations": [
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "objectType": "PLACE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/api/core/v3/places",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "startIndex",
+                "queryValue": "0"
+              },
+              {
+                "queryKey": "count",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "sort",
+                "queryValue": "dateCreatedAsc"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "placeID",
+            "binaryResponse": false,
+            "dataPath": "list"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "PLACE",
+            "objectType": "CONTENT"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/api/core/v3/places/${LW_PARENT_DATA_KEY}/contents",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "startIndex",
+                "queryValue": "0"
+              },
+              {
+                "queryKey": "count",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "sort",
+                "queryValue": "dateCreatedAsc"
+              },
+              {
+                "queryKey": "fields",
+                "queryValue": "contentID,subject,type,published,updated,lastActivity,lastActivityDate,parentPlace,author,parent,status,viewCount,parentVisible,parentContentVisible,visibility,archived,question,resolved,sameQuestionCount,followerCount"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "contentID",
+            "binaryResponse": false,
+            "dataPath": "list",
+            "parentIdKey": "placeID"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "CONTENT",
+            "objectType": "ATTACHMENT_METADATA"
+          },
+          "skipIndexation": true,
+          "requestConfiguration": {
+            "endpoint": "/api/core/v3/attachments/contents/${LW_PARENT_DATA_KEY}",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "list",
+            "parentIdKey": "contentID"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "ATTACHMENT_METADATA",
+            "objectType": "ATTACHMENT_DOWNLOAD"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/api/core/v3/attachments/${LW_PARENT_DATA_KEY}/data",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "binaryResponse": true,
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "PLACE",
+            "objectType": "ANNOUNCEMENT_PLACE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/api/core/v3/places/${LW_PARENT_DATA_KEY}/announcements",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "startIndex",
+                "queryValue": "0"
+              },
+              {
+                "queryKey": "count",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "sort",
+                "queryValue": "dateCreatedAsc"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "list",
+            "parentIdKey": "placeID"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "objectType": "ANNOUNCEMENT_SYSTEM"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/api/core/v3/announcements",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "startIndex",
+                "queryValue": "0"
+              },
+              {
+                "queryKey": "count",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "sort",
+                "queryValue": "dateCreatedAsc"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "list"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "objectType": "PERSON"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/api/core/v3/people",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "startIndex",
+                "queryValue": "0"
+              },
+              {
+                "queryKey": "count",
+                "queryValue": "50"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "list"
+          }
+        }
+      }
+    ]
+  },
+  "connector": "lucidworks.rest"
+}
