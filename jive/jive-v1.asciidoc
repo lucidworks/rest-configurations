@@ -1,1 +1,149 @@
 == Jive REST Configuration
+
+This documentation describes aspects of the Jive REST `jive-v1.json` file configuration such as the authentication methods, endpoints requested, data crawled and retrieved, pagination information. Terminology is also provided as a reference.
+
+The rest-connector will index each jive object listed as a separate solr document:
+
+* Places: Spaces, Blogs, Projects, Groups
+* Content: Discussions, Polls, Ideas, Questions, Announcements, Status Updates, Videos, Images, Documents, Files
+* Attachments
+* Announcements: System and Place Announcements
+* People
+
+== Authentication methods
+
+* Basic Authentication using the username and password
+
+== Supported crawl options
+
+* Full crawl
+** Per re-crawl, all the content from the source is retrieved as it were a full-crawl
+** Orphan objects (deleted in the jive source that are not retrieved with a current crawl), will be deleted from the index using the strayContentDeletion feature from connectors-service, which is run when a crawl finishes.
+
+== Variables used
+
+The Jive REST configuration variables used are:
+
+* `${LW_PARENT_DATA_KEY}` - Used with Child Request Configuration. This variable is replaced with the 'id' from the parent objects, which is extracted by setting the property parentDataKey. See more details in the next section.
+
+
+== Pagination Setup
+
+Pagination by Next Page URL is configured per Request.
+
+When pagination is performed, Jive returns a next page URL in the response, e.g. for request `/api/core/v3/places?count=50&startIndex=0&sort=dateCreatedAsc`. which include tne next page url to requests under the `links.next` path.
+```
+{
+    "itemsPerPage": 1,
+    "links": {
+        "next": "https://{jive_instance}"/api/core/v3/places?sort=dateCreatedAsc&fields=%40all&count=50&startIndex=50"
+    },
+```
+Internally, the connector will follow the next page URL until the pagination finishes. When no more pages are found, the `links.next` is not provided and pagination stop.
+
+
+=== Configure the 'Pagination By NextPageURL' property:
+
+* `Next Page URL Key: links.next`, where `links.next` is the key of the response that contains the next page URL
+
+=== Configure Query Params:
+
+* `startIndex=0`, where 0 is the initial index
+* `count=50`, where 50 is the number of items per page
+
+
+== Endpoints Configuration with Jive REST Connector
+
+* The following table describes the Jive REST endpoints needed, and how those are configured with the rest-connector.
+* Each requests in configured under the property *List of Requests Configuration* (`requestConfigurations` in the jive-v1.json` file)
+
+[cols="1,1,1,1,1,1",options="header"]
+|=======================
+|Request type | ObjectType | Parent ObjectType | Endpoint | Query parameters | Description
+|Root Request | PLACE | |GET `/api/core/v3/places` |`startIndex=0&count=5&sort=dateCreatedAsc`|Returns the places (spaces, blogs, projects, groups) from the Jive instance.
+|Child Request | CONTENT |PLACE |GET `/api/core/v3/places/${LW_PARENT_DATA_KEY}/contents` |`startIndex=0&count=5&sort=dateCreatedAsc` TODO|Return children content per each place retrieved with previous request. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent place, which is extracted by setting the property `Response Handling -> parentDataKey=placeID`.
+|Child Request | ATTACHMENT_METADATA |CONTENT |GET `/api/core/v3/attachments/contents/${LW_PARENT_DATA_KEY}` | |Returns list of attachments per each content retrieved with the previous request 'CONTENT'. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent content, which is extracted by setting the property `Response Handling -> parentDataKey=contentID`. This request enable the property 'Skip Indexation'.
+|Child Request | ATTACHMENT_DOWNLOAD |ATTACHMENT_METADATA |GET `/api/core/v3/attachments/${LW_PARENT_DATA_KEY}/data` | |Download the content from each attachment retrieved with the previous request 'ATTACHMENT_METADATA'. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the file, which is extracted by setting the property `Response Handling -> parentDataKey=id`
+|Child Request | ANNOUNCEMENT_PLACE |PLACE |GET `/api/core/v3/places/${LW_PARENT_DATA_KEY}/announcements` |`startIndex=0&count=5&sort=dateCreatedAsc`|Returns list of announcements per each place retrieved with the previous request 'PLACE'. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent content, which is extracted by setting the property `Response Handling -> parentDataKey=placeID`.
+|Root Request | ANNOUNCEMENT_SYSTEM | |GET `/api/core/v3/announcements` |`startIndex=0&count=5&sort=dateCreatedAsc`|Returns list of announcements from the whole system.
+|Root Request | PEOPLE |PLACE |GET `/api/core/v3/people` |`startIndex=0&count=5&sort=dateCreatedAsc`|Returns the people registered in the jive instance`.
+
+|=======================
+
+== Response Parsing Configuration
+
+Per request, configure the property *Response Handling* to set up how to parse the response (`responseConfiguration` in the jive-v1.json` file)
+
+=== Plugin Parsing:
+
+* This parsing happens by default. The responses are parsed as a JSON Object structure using JsonPath.
+* Plugin Parsing will happen for requests: PLACE, CONTENT, ATTACHMENT_METADATA, ANNOUNCEMENT_PLACE, ANNOUNCEMENT_SYSTEM, PEOPLE
+* Properties `Response Handling -> Data ID, Data Path` are configured to extract certain values from the Objects parsed.
+* Properties `Response Handling -> Parent Data Key` are configured to extract the 'id' of the parent object.
+* See section *Terminology* for more information
+
+=== Binary Parsing:
+* Enable by setting the property `Response Handling -> Parse Binary Data` (`binaryResponse` in the jive-v1.json` file). Send the whole response to the Fusion Parsers. If disabled (default), the response is parsed as a JSON object
+* This parsing is configured for request: ATTACHMENT_DOWNLOAD
+
+== Skip Indexation of Objects
+
+When enabled, the response is not indexed. This is useful when objects are requested solely to discover their child objects, without needing to index the parent object itself.
+
+* For Jive Configuration:
+- Given a parent Request ATTACHMENT_METADATA, to retrieve a list of attachments metadata. The request is needed to discover the IDs of attachments to be downloaded in a following request.
+- Given a child  Request ATTACHMENT_DOWNLOAD to download the binary content from the attachments found previously
+- By default, both request will index two solr-docs that represents the same file:
+```
+1) doc the file-metadata only (Request ATTACHMENT_METADATA)
+
+id: "serverURL_/api/core/v3/attachments/1050/data_fileID"
+name_s: "sample.txt",
+status_s: "published",
+type_s: "attachment",
+_lw_rest_object_type_s: "attachment_metadata"
+```
+
+```
+2) doc with the file-metadata joined with the file-content (Request ATTACHMENT_DOWNLOAD)
+
+id: "serverURL_/api/core/v3/attachments/1050/data_fileID_binary"
+name_s: "sample.txt"
+status_s: "published"
+type_s: "attachment",
+body_s: "body of txt"
+_lw_rest_object_type_s: "attachment_download"
+```
+- There is no need to index the first solr-doc. To avoid indexing this, the property *'Skip Indexation'* for the Request ATTACHMENT_METADATA is enabled in the 'jive-v1.json' file.
+- If needed to avoid indexing another objects, enable the property *'Skip Indexation'* in the corresponding request configuration.
+
+== Notes
+
+* All objects indexed will have a field `_lw_rest_object_type_s` with the 'ObjectType value' to identify the request that retrieved the object.
+** In order to differentiate if a '_lw_rest_object_type_s: place' is a `space, blog, project or group`, check the field `type_s`, which is part of the original jive response. The values are: `space`, `blog`, `project`, `group`
+** Similarly, with '_lw_rest_object_type_s: content', in order to differentiate if it is a `discussion, document, file, etc`, use the field `type_s`. The values are: `discussion`, `poll`, `document`, `file`, etc
+
+
+== Terminology
+
+The following terms are provided as a reference.
+
+[options="header",cols="1s,1"]
+|=======================
+
+|Term|Description
+|List of Requests Configuration|Configure List of Requests to extract data from the Rest source. Requests are linked hierarchically by using the properties Parent-Child Request Link -> ObjectType and ParentObjectType.
+
+|Object Type| The unique name to identify the request.
+|Parent Object Type| Reference an existent Object Type. Create a parent-child hierarchy, where the current request becomes the child of the specified Parent Object Type. If blank, the current request is considered a Root-Request.
+
+|Root Request|The request to retrieve the initial objects.
+|Child Request|The type of request to retrieve additional information for the root data objects. The child requests will be performed per each root data object.
+|Skip Indexation|When enabled, the response is not indexed. Useful when requests of objects are needed only to discover child-objects, without need to index the object itself.
+
+|Response Handling| The responseConfiguration Defines the mapping between the response and data objects to be indexed.
+|Data Path|The path to access a specific data object within a response. For example, to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed. This property accepts JsonPath expressions e.g. `objects`, `objects[*]`, or `list.entries` to extract the list of alfresco objects.
+|Data ID|The identifier key for the data objects extracted with 'Data Path'. This value will be used to build the solr-document's ID. If not provided, a random UUID will be used. This property accepts JsonPath expressions, e.g. `entry.id` to extract the ID of the alfresco file/folder
+|Parent Data Key|Only configure with Child Requests. Set the 'key' to extract the ID of the root/parent response, which value is used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example, /alfresco/api/-default-/public/alfresco/versions/1/nodes/`${LW_PARENT_DATA_KEY}`/content
+|Parse Binary Data| Enable to send the whole response to the Fusion Parsers. If enabled, properties `Data Path, Data ID` will be ignored and pagination will not happen.
+|=======================

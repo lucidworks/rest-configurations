@@ -6,7 +6,7 @@
   "type": "lucidworks.rest",
   "properties": {
     "collection": "{add collection here}",
-    "serviceURL": "https://{add jive url}",
+    "serviceURL": "{add jive url}",
     "authenticationMode": {
       "basicAuth": {
         "password": "xXx-Redacted-xXx",
