@@ -1,0 +1,141 @@
+== Confluence REST Configuration
+
+This documentation describes aspects of the Confluence REST `confluence-v2.json` file configuration such as the authentication methods, endpoints requested, data crawled, pagination information. Terminology is also provided as a reference.
+
+The rest-connector will index each confluence object listed as a separate solr document:
+
+* Spaces
+* Wiki Pages
+* Blog Posts
+* Pages Comments
+* Blog Comments
+
+
+The configuration was tested with Confluence Cloud with the API v2.0 https://developer.atlassian.com/cloud/confluence/rest/v2
+
+* At March 31, 2025 the v1.0 deprecated endpoints that were used to obtains the objects mentioned above, will be removed. For more information, see https://community.developer.atlassian.com/t/update-to-confluence-v1-api-deprecation-timeline/79687/18[v1-api-deprecation-timeline]
+
+The configuration is based on the Discovery of objects at Hierarchical Requests, supported since plugin version rest-1.1.0
+
+== Authentication methods
+
+* Basic Authentication using the username and password from an Atlassian account. For more information, see link:https://developer.atlassian.com/cloud/confluence/basic-auth-for-rest-apis/[Basic auth for REST APIs | Atlassian Developer^].
+
+* API Token. For information about how to create a new API token, see link:https://id.atlassian.com/manage/api-tokens[API Tokens | Atlassian ID^].
+
+== Supported crawl options
+
+* Full crawl:
+** All the content from the source is fetched.
+
+* Re-Crawl:
+** Per re-crawl, all the content from the source is retrieved as it were a full-crawl
+** Orphan objects (deleted in the confluence source that are not retrieved with a current crawl), will be deleted from the index using the strayContentDeletion feature from connectors-service, which is run when a crawl finishes.
+
+== Pagination Setup
+
+Pagination by Next Page URL is configured per Request.
+
+When pagination is performed, Confluence returns a next page URL in the response, e.g. for `/wiki/api/v2/spaces/98307/pages?body-format=storage&limit=50`, the response include the next page to request under `_links.next` path.
+```
+    "_links": {
+        "next": "/wiki/api/v2/spaces/<spaceId>>/pages?cursor=eyJpZCH6IjQ5ODcyOTR1IiwiY29udGVFdE9yZGVyIjoiaQQiLCJjb250ZW50T3JkZXJWYWx1ZSI6NDk4NzI5MzV9",
+        "base": "https://{confluence_instance}/wiki"
+    }
+```
+Internally, the connector will request the next page URL. When `_links.next` is not provided, it means no more pages are found, and the pagination will stop.
+
+For more information about confluence pagination, see https://developer.atlassian.com/cloud/confluence/rest/v2/intro/#using
+
+=== Configure the 'Pagination By NextPageURL' property:
+
+* `Next Page URL Key: _links.next`, where `_links.next` is the key of the response that contains the next page URL
+
+=== Configure Query Params:
+
+* `limit=50`, where 50 is the number of items per page
+
+== Variables used
+
+The Confluence REST configuration variables used are:
+
+* `${LW_PARENT_DATA_KEY}` - Used with Child Request Configuration. This variable is replaced with the 'id' from the parent objects, which is extracted by setting the property parentDataKey. See more details in the next section.
+
+== Endpoints Configuration with Confluence REST Connector
+
+* The following table describes the Confluence REST endpoints needed, and how those are configured with the rest-connector.
+* Each requests in configured under the property *List of Requests Configuration* (`requestConfigurations` in the confluence-v2.json` file)
+
+[cols="1,1,1,1,1,1",options="header"]
+|=======================
+|Request type | ObjectType | Parent ObjectType | Endpoint | Query parameters | Description
+|Root Request | SPACE | |GET `/wiki/api/v2/spaces` |`limit=50&description-format=plain&status=current`|Returns the Spaces with status=current from the Atlassian Confluence instance.
+|Child Request | PAGE |SPACE |GET `/wiki/api/v2/spaces/${LW_PARENT_DATA_KEY}/pages` |`limit=50&body-format=storage`|Return the Pages (children) per each Space retrieved with the previous request SPACE. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'space', which is extracted by setting the property `Response Handling -> parentDataKey=id`.
+|Child Request | BLOG |SPACE |GET `/wiki/api/v2/spaces/${LW_PARENT_DATA_KEY}/blogposts` |`limit=50&body-format=storage`|Return the Blogs (children) per each Space retrieved with the previous request SPACE. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'space', which is extracted by setting the property `Response Handling -> parentDataKey=id`.
+
+|Child Request | COMMENT_FOOTER_PAGE |PAGE |GET `/wiki/api/v2/pages/${LW_PARENT_DATA_KEY}/footer-comments` |`limit=50&body-format=storage`|Return the Footer-Comments per each Page retrieved with the previous request PAGE. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'page', which is extracted by setting the property `Response Handling -> parentDataKey=id`.
+|Child Request | COMMENT_REPLY_FOOTER_PAGE |COMMENT_FOOTER_PAGE |GET `/wiki/api/v2/footer-comments/${LW_PARENT_DATA_KEY}/children` |`limit=50&body-format=storage`|Return the Replies per each Footer-Comment retrieved with the previous requests COMMENT_FOOTER_PAGE. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'footer-comment', which is extracted by setting the property `Response Handling -> parentDataKey=id`. This request enable the property 'Recursive Request' - Todo
+|Child Request | COMMENT_INLINE_PAGE |PAGE |GET `/wiki/api/v2/pages/${LW_PARENT_DATA_KEY}/inline-comments` |`limit=50&body-format=storage`|Return the InLine-Comments per each Page retrieved with the previous request PAGE. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'page', which is extracted by setting the property `Response Handling -> parentDataKey=id`.
+|Child Request | COMMENT_REPLY_INLINE_PAGE |COMMENT_INLINE_PAGE |GET `/wiki/api/v2/inline-comments/${LW_PARENT_DATA_KEY}/children` |`limit=50&body-format=storage`|Return the Replies per each InLine-Comment retrieved with the previous request COMMENT_INLINE_PAGE. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'inline-comment', which is extracted by setting the property `Response Handling -> parentDataKey=id`. This request does not need to enable the 'Recursive Request'
+
+|Child Request | COMMENT_FOOTER_BLOG |BLOG |GET `/wiki/api/v2/blogposts/${LW_PARENT_DATA_KEY}/footer-comments` |`limit=50&body-format=storage`|Return the Footer-Comments per each Blog retrieved with the previous request BLOG. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'blog', which is extracted by setting the property `Response Handling -> parentDataKey=id`.
+|Child Request | COMMENT_REPLY_FOOTER_BLOG |COMMENT_FOOTER_BLOG |GET `/wiki/api/v2/footer-comments/${LW_PARENT_DATA_KEY}/children` |`limit=50&body-format=storage`|Return the Replies per each Footer-Comment retrieved with the previous requests COMMENT_FOOTER_BLOG. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'footer-comment', which is extracted by setting the property `Response Handling -> parentDataKey=id`. This request enable the property 'Recursive Request' - Todo
+|Child Request | COMMENT_INLINE_BLOG |BLOG |GET `/wiki/api/v2/blogposts/${LW_PARENT_DATA_KEY}/inline-comments` |`limit=50&body-format=storage`|Return the InLine-Comments per each Blog retrieved with the previous request BLOG. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'blog', which is extracted by setting the property `Response Handling -> parentDataKey=id`.
+|Child Request | COMMENT_REPLY_INLINE_BLOG |COMMENT_INLINE_BLOG |GET `/wiki/api/v2/inline-comments/${LW_PARENT_DATA_KEY}/children` |`limit=50&body-format=storage`|Return the Replies per each InLine-Comment retrieved with the previous request COMMENT_INLINE_BLOG. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'inline-comment', which is extracted by setting the property `Response Handling -> parentDataKey=id`. This request does not need to enable the 'Recursive Request'
+
+|=======================
+
+=== Notes
+
+* The requests are linked hierarchically by using the properties *ObjectType and ParentObjectType*.
+** It is to maintain the parent-child relationships between different level of objects. For instance, 1) a Page is a Space-Child, 2) a Comment is a Page-Child, 3) a Comment-Reply is a Comment-Child.
+** When objects are indexed, the field `_lw_rest_parent_object_ss` keeps the list of parents related to an object, E.g.: For a page, indexes `_lw_rest_parent_object_ss: ["/spaces/TestSpaceName", "/spaces/TestSpace/pages/<pageId>/TestPageName"]`, where `<pageId>` is a numeric value.
+
+* With Confluence api-v2 endpoints, different requests are needed to retrieve: the Footer-Comments and InLine-Comments (Pages and Blogs), as it the replies per each comment.
+** In order to maintain the relation-ship between the comment/replies and their parents (pages/blogs and spaces), it was needed to create 8 different requests configurations.
+*** To retrieve Page Comments: COMMENT_FOOTER_PAGE and COMMENT_INLINE_PAGE. For Replies of Comments: COMMENT_REPLY_FOOTER_PAGE, and COMMENT_REPLY_INLINE_PAGE
+*** To retrieve Blog Comments: COMMENT_FOOTER_BLOG and COMMENT_INLINE_BLOG. For Replies of Comments: COMMENT_REPLY_FOOTER_BLOG, and COMMENT_REPLY_INLINE_BLOG
+*** When comments are indexed, the field contains: `_lw_rest_parent_object_ss: ["/spaces/TestSpaceName", "/spaces/TestSpace/pages/<pageId>/TestPageName", "<commentId>"]`.
+*** When replies are indexed, the field contains: `_lw_rest_parent_object_ss: ["/spaces/TestSpaceName", "/spaces/TestSpace/pages/<pageId>/TestPageName", "<commentId>", "<commentReplyId>"]`, where `<pageId>`, `<commentId>` and `<commentReplyId>` are numeric values.
+
+
+== Response Parsing Configuration
+
+Per request, configure the property *Response Handling* to set up how to parse the response (`responseConfiguration` in the `confluence-v2.json` file)
+
+=== Plugin Parsing:
+
+* This parsing happens by default. The responses are parsed as a JSON Object structure using JsonPath.
+* Plugin Parsing will happen for all the requests listed in the Table 'Endpoints Configuration with Confluence REST Connector'.
+* Properties `Response Handling -> Data ID, Data Path` are configured to extract certain values from the Objects parsed.
+* Properties `Response Handling -> Parent Data Key` are configured to extract the 'id' of the parent object.
+
+=== Binary Parsing:
+* This property is not used with the `confluence-v2.json` configuration.
+
+== Terminology
+
+The following terms are provided as a reference.
+
+[options="header",cols="1s,1"]
+|=======================
+
+|Term|Description
+|List of Requests Configuration|Configure List of Requests to extract data from the Rest source. Requests are linked hierarchically by using the properties Parent-Child Request Link -> ObjectType and ParentObjectType.
+
+|Object Type| The unique name to identify the request.
+|Parent Object Type| Reference an existent Object Type. Create a parent-child hierarchy, where the current request becomes the child of the specified Parent Object Type. If blank, the current request is considered a Root-Request.
+
+|Root Request|The type of request-configuration to retrieve the initial parent objects.
+|Child Request|The type of request-configuration to retrieve children objects per each parent object. A child-request can be a parent of another child-request, e.g. Footer-Comment is a child of a Page.
+|Recursive Request| Enable to recursively perform the same ObjectType request-configuration to retrieve all the nested objects under an object. This is particularly useful when the nesting depth is unknown. For example, the request ObjectType=COMMENT_REPLY_FOOTER_BLOG first retrieves only the direct replies from a comment (parent), by enabling recursive-request, 'COMMENT_REPLY_FOOTER_BLOG' will be executed recursively until no more replies are found.
+
+|Response Handling| The responseConfiguration Defines the mapping between the response and data objects to be indexed.
+|Data Path|The path to access a specific data object within a response. For example, to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed. This property accepts JsonPath expressions e.g. `objects`, `objects[*]`, or `results` to extract the list of confluence objects.
+|Data ID|The identifier key for the data objects extracted with 'Data Path'. This value will be used to build the solr-document's ID. If not provided, a random UUID will be used. This property accepts JsonPath expressions, e.g. `_links.webui` to extract the unique path of a Page.
+|Parent Data Key|Must configure with Child Requests. Map to a key from the parent object, whose value will be used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example, `/wiki/api/v2/spaces/${LW_PARENT_DATA_KEY}/blogposts`
+|_lw_rest_object_type_s| All objects index this field, which value is the 'ObjectType' of the request that retrieved the object.
+|_lw_rest_object_s| All objects index this field. Contains the objectId extracted with the property 'Data ID'. E.g.: For a space, indexes `_lw_rest_object_s: "/spaces/TestSpace"`. For a page, indexes `_lw_rest_object_s: "/spaces/TestSpace/pages/<pageId>/TestPage"`, where <pageId> is a numeric value.
+|_lw_rest_parent_object_ss| All objects index this field, which value is a list of the objectIds inherited from all their parents, and the objectId from the object itself. E.g.: For a space, indexes _lw_rest_parent_object_ss: ["/spaces/TestSpace"]. For a comment, indexes `_lw_rest_parent_object_ss: ["/spaces/TestSpace", "/spaces/TestSpace/pages/<pageId>/TestPage", "<commentId>"]`, where `<commentId>` is a numeric value.
+
+|=======================

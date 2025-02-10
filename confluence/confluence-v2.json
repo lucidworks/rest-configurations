@@ -1,0 +1,407 @@
+{
+  "parserId": "_system",
+  "pipeline": "{add pipeline here}",
+  "connector": "lucidworks.rest",
+  "coreProperties": {},
+  "id": "rest-confluence",
+  "type": "lucidworks.rest",
+  "properties": {
+    "collection": "{add collection here}",
+    "serviceURL": "{add confluence url}",
+    "authenticationMode": {
+      "basicAuth": {
+        "password": "xXx-Redacted-xXx",
+        "user": "{add email address here!!!}"
+      }
+    },
+    "requestConfigurations": [
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "objectType": "SPACE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/spaces",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "limit",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "description-format",
+                "queryValue": "plain"
+              },
+              {
+                "queryKey": "status",
+                "queryValue": "current"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "_links.webui",
+            "binaryResponse": false,
+            "dataPath": "results"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "SPACE",
+            "objectType": "PAGE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/spaces/${LW_PARENT_DATA_KEY}/pages",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "limit",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "body-format",
+                "queryValue": "storage"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "_links.webui",
+            "binaryResponse": false,
+            "dataPath": "results",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "SPACE",
+            "objectType": "BLOG"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/spaces/${LW_PARENT_DATA_KEY}/blogposts",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "limit",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "body-format",
+                "queryValue": "storage"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "_links.webui",
+            "binaryResponse": false,
+            "dataPath": "results",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "PAGE",
+            "objectType": "COMMENT_FOOTER_PAGE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/pages/${LW_PARENT_DATA_KEY}/footer-comments",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "limit",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "body-format",
+                "queryValue": "storage"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "results",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": true,
+          "linkRequest": {
+            "parentObjectType": "COMMENT_FOOTER_PAGE",
+            "objectType": "COMMENT_REPLY_FOOTER_PAGE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/footer-comments/${LW_PARENT_DATA_KEY}/children",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "body-format",
+                "queryValue": "storage"
+              },
+              {
+                "queryKey": "limit",
+                "queryValue": "50"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "results",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "PAGE",
+            "objectType": "COMMENT_INLINE_PAGE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/pages/${LW_PARENT_DATA_KEY}/inline-comments",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "limit",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "body-format",
+                "queryValue": "storage"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "results",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "COMMENT_INLINE_PAGE",
+            "objectType": "COMMENT_REPLY_INLINE_PAGE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/inline-comments/${LW_PARENT_DATA_KEY}/children",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "limit",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "body-format",
+                "queryValue": "storage"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "results",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "BLOG",
+            "objectType": "COMMENT_FOOTER_BLOG"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/blogposts/${LW_PARENT_DATA_KEY}/footer-comments",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "limit",
+                "queryValue": "25"
+              },
+              {
+                "queryKey": "body-format",
+                "queryValue": "storage"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "results",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": true,
+          "linkRequest": {
+            "parentObjectType": "COMMENT_FOOTER_BLOG",
+            "objectType": "COMMENT_REPLY_FOOTER_BLOG"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/footer-comments/${LW_PARENT_DATA_KEY}/children",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "body-format",
+                "queryValue": "storage"
+              },
+              {
+                "queryKey": "limit",
+                "queryValue": "50"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "results",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "BLOG",
+            "objectType": "COMMENT_INLINE_BLOG"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/blogposts/${LW_PARENT_DATA_KEY}/inline-comments",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "limit",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "body-format",
+                "queryValue": "storage"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "results",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "COMMENT_INLINE_BLOG",
+            "objectType": "COMMENT_REPLY_INLINE_BLOG"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/wiki/api/v2/inline-comments/${LW_PARENT_DATA_KEY}/children",
+            "pagination": {
+              "paginationByNextUrl": {
+                "paginationKey": "_links.next"
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "limit",
+                "queryValue": "50"
+              },
+              {
+                "queryKey": "body-format",
+                "queryValue": "storage"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "results",
+            "parentIdKey": "id"
+          }
+        }
+      }
+    ]
+  }
+}
