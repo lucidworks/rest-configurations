@@ -2,7 +2,7 @@
 
 This documentation describes aspects of the GitHub REST configuration such as the authentication methods, endpoints requested, data crawled, pagination information. Terminology is also provided as a reference.
 
-The JSON template file `github-repo-v1.json` crawls a single specific repository via `/repos/{owner}/{repo}`. To crawl multiple repositories, create one datasource per repository.
+The JSON template file `github-repo.json` crawls a single specific repository via `/repos/{owner}/{repo}`. To crawl multiple repositories, create one datasource per repository.
 
 The GitHub REST Configuration will index each GitHub object listed below, as a separate solr document:
 
