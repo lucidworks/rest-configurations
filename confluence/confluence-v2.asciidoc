@@ -2,7 +2,7 @@
 
 This documentation describes aspects of the Confluence REST `confluence-v2.json` file configuration such as the authentication methods, endpoints requested, data crawled, pagination information. Terminology is also provided as a reference.
 
-The Confluence REST Configuration will index each confluence object listed as a separate solr document:
+The Confluence REST Configuration will index each confluence object listed below, as a separate solr document:
 
 * Spaces
 * Wiki Pages
@@ -92,7 +92,7 @@ The Confluence REST configuration variables used are:
 ** It is to maintain the parent-child relationships between different level of objects. For instance, 1) a Page is a Space-Child, 2) a Comment is a Page-Child, 3) a Comment-Reply is a Comment-Child.
 ** When objects are indexed, the field `_lw_rest_parent_object_ss` keeps the list of parents related to an object, E.g.: For a page, indexes `_lw_rest_parent_object_ss: ["/spaces/TestSpaceName", "/spaces/TestSpace/pages/<pageId>/TestPageName"]`, where `<pageId>` is a numeric value.
 
-* With Confluence api-v2 endpoints, different requests are needed to retrieve: the Footer-Comments and InLine-Comments from Pages and Blogs, as it the replies per each comment.
+* With Confluence api-v2 endpoints, different requests are needed to retrieve: the Footer-Comments and InLine-Comments from Pages and Blogs, as it the comment replies per each comment.
 ** In order to maintain the relation-ship between the comment/replies and their parents (pages/blogs and spaces), it was needed to create 8 different requests configurations.
 *** To retrieve Page Comments: COMMENT_FOOTER_PAGE and COMMENT_INLINE_PAGE. For Replies of Comments: COMMENT_REPLY_FOOTER_PAGE, and COMMENT_REPLY_INLINE_PAGE
 *** To retrieve Blog Comments: COMMENT_FOOTER_BLOG and COMMENT_INLINE_BLOG. For Replies of Comments: COMMENT_REPLY_FOOTER_BLOG, and COMMENT_REPLY_INLINE_BLOG
