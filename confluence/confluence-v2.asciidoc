@@ -2,7 +2,7 @@
 
 This documentation describes aspects of the Confluence REST `confluence-v2.json` file configuration such as the authentication methods, endpoints requested, data crawled, pagination information. Terminology is also provided as a reference.
 
-The rest-connector will index each confluence object listed as a separate solr document:
+The Confluence REST Configuration will index each confluence object listed as a separate solr document:
 
 * Spaces
 * Wiki Pages
@@ -10,11 +10,13 @@ The rest-connector will index each confluence object listed as a separate solr d
 * Pages Comments
 * Blog Comments
 
-The configuration is based on the Discovery of objects at Hierarchical Requests, supported since plugin version rest-1.1.0
+The Configuration is based on the Discovery of objects at Hierarchical Requests, supported since plugin version rest-1.1.0
 
-The configuration was tested with Confluence Cloud with the API v2.0 https://developer.atlassian.com/cloud/confluence/rest/v2
+The configuration uses the Confluence API v2.0 https://developer.atlassian.com/cloud/confluence/rest/v2
 
 * At March 31, 2025 the v1.0 deprecated endpoints that were used to obtains the objects mentioned above, will be removed. For more information, see https://community.developer.atlassian.com/t/update-to-confluence-v1-api-deprecation-timeline/79687/18[v1-api-deprecation-timeline]
+
+The configuration was tested with Confluence Cloud
 
 == Authentication methods
 
