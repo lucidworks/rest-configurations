@@ -1,0 +1,223 @@
+{
+  "pipeline": "{add pipeline name here}",
+  "parserId": "_system",
+  "connector": "lucidworks.rest",
+  "coreProperties": {},
+  "id": "rest-jira-v2",
+  "type": "lucidworks.rest",
+  "properties": {
+    "collection": "{add collection name here}",
+    "serviceURL": "https://{add jira url}",
+    "authenticationMode": {
+      "basicAuth": {
+        "password": "xXx-Redacted-xXx",
+        "user": "{add username here!!!}"
+      }
+    },
+    "requestConfigurations": [
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "objectType": "PROJECT"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/rest/api/2/project/search",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "values",
+                "batchSize": 50,
+                "indexStart": 0
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "startAt",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "maxResults",
+                "queryValue": "${LW_BATCH_SIZE}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "key",
+            "binaryResponse": false,
+            "dataPath": "values"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "PROJECT",
+            "objectType": "ISSUE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/rest/api/2/search",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "issues",
+                "batchSize": 50,
+                "indexStart": 0
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "fields",
+                "queryValue": "assignee,issuetype,priority,project,reporter,status,summary,updated"
+              },
+              {
+                "queryKey": "startAt",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "maxResults",
+                "queryValue": "${LW_BATCH_SIZE}"
+              },
+              {
+                "queryKey": "jql",
+                "queryValue": "project=${LW_PARENT_DATA_KEY}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "key",
+            "binaryResponse": false,
+            "dataPath": "issues",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "ISSUE",
+            "objectType": "COMMENT"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/rest/api/2/issue/${LW_PARENT_DATA_KEY}/comment",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "comments",
+                "batchSize": 50,
+                "indexStart": 0
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "startAt",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "maxResults",
+                "queryValue": "${LW_BATCH_SIZE}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "comments",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "ISSUE",
+            "objectType": "WORKLOG"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/rest/api/2/issue/${LW_PARENT_DATA_KEY}/worklog",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "worklogs",
+                "batchSize": 50,
+                "indexStart": 0
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "startAt",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "maxResults",
+                "queryValue": "${LW_BATCH_SIZE}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "worklogs",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "ISSUE",
+            "objectType": "ATTACHMENT_METADATA"
+          },
+          "skipIndexation": true,
+          "requestConfiguration": {
+            "endpoint": "/rest/api/2/issue/${LW_PARENT_DATA_KEY}",
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "fields",
+                "queryValue": "attachment"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "fields.attachment[*]",
+            "parentIdKey": "id"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "ATTACHMENT_METADATA",
+            "objectType": "ATTACHMENT_DOWNLOAD"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/rest/api/2/attachment/content/${LW_PARENT_DATA_KEY}",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "binaryResponse": true,
+            "parentIdKey": "id"
+          }
+        }
+      }
+    ],
+    "serviceEndpoints": []
+  }
+}

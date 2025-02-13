@@ -1,0 +1,165 @@
+== Jira REST Configuration
+
+This documentation describes aspects of the Jira REST `jira-v2.json` file configuration such as the authentication methods, endpoints requested, data crawled, pagination information. Terminology is also provided as a reference.
+
+The Jira REST Configuration will index each object listed below, as a separate solr document:
+
+* Projects
+* Issues
+* Comments
+* Worklogs
+* Attachments
+
+The Configuration is based on the Discovery of objects at Hierarchical Requests, supported since plugin version rest-1.1.0
+
+The configuration uses the Jira API v2.0 https://developer.atlassian.com/cloud/jira/platform/rest/v2/intro/#version
+
+The configuration was tested with Jira Cloud
+
+== Authentication methods
+
+The Jira REST configuration supports:
+
+* Basic Authentication using the username and password from an Atlassian account. For more information, see link:https://developer.atlassian.com/cloud/jira/platform/basic-auth-for-rest-apis/[Basic auth for REST APIs | Atlassian Developer^].
+* API Token. For information about how to create a new API token, see link:https://id.atlassian.com/manage/api-tokens[API Tokens]. and link:https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/[Manage API tokens - Atlassian account].
+
+N.B. The API token is a requirement to authenticate the at Atlassian api. Instead of using the Atlassian account password, Use the token value for the password.
+
+== Supported crawl options
+
+* Full crawl:
+** All the content from the source is fetched.
+
+* Re-Crawl:
+** For each re-crawl, all the content from the source is retrieved as it were a full-crawl
+** Orphan objects (deleted in the jira source that are not retrieved with a current crawl), will be deleted from the index using the strayContentDeletion feature from connectors-service, which is run when a crawl finishes.
+
+== Parser
+
+The default parser is set to `_system` but can be changed to any parser based on index needs.
+
+== Pagination Setup
+
+Pagination by Batch Size is configured for each Request. Needs to configure properties: 'Query Params', and 'Pagination By BatchSize'
+
+=== Configure the 'Pagination By BatchSize' properties:
+
+* IndexStart: The starting point. Set to 0 to start from the very first object. It replaces the variable `${LW_INDEX_START}`
+* BatchSize: The number of elements to retrieve. Set to 50 by default. It replaces the variable `${LW_BATCH_SIZE}`
+* Stop Condition Key: Reference the “key” in the response, that needs to be met in order to stop the pagination. For issues pagination, use “issues”. For projects pagination, use 'values'
+* Stop Condition Value: Reference the “value” in the response, that needs to be met in order to stop the pagination. For the Jira Config, to stop pagination the list of objects retrieved must be empty to stop the pagination, then the stop condition should be []
+
+=== Query Params:
+
+* maxResults=`${LW_BATCH_SIZE}`, where `${LW_BATCH_SIZE}` is dynamically replaced with the value of property `BatchSize`.
+* startAt=`${LW_INDEX_START}`, where `${LW_INDEX_START}` is dynamically replaced with the value of property `IndexStart` to request the first page. then internally replaced with 'IndexStart + BatchSize' to request next pages.
+
+
+== Variables used
+
+The Jira REST configuration use the following variables, which are created with the rest-connector:
+
+* `${LW_BATCH_SIZE}` - Used with pagination feature. Used to set the `maxResults` query parameter, which controls the number of entries/objects that are returned in the response.
+
+* `${LW_INDEX_START}` - Used with pagination feature. Used to set the `startAt` query parameter, which is used to traverse the pagination.
+
+* `${LW_PARENT_DATA_KEY}` - Used with the Child Request Configurations. In crawl-time, this variable is dynamically replaced with the parent object ID value extracted by setting the property 'Parent Data Key'. Note: The parent object is retrieved with a parent-request.
+
+
+
+== Endpoints Configuration with Jira REST Connector
+
+* The following table describes the Jira REST endpoints needed, and how those are configured with the rest-connector.
+* Each request in configured under the property *List of Requests Configuration* (`requestConfigurations` in the jira-v2.json` file)
+
+[cols="1,1,1,1,1,1",options="header"]
+|=======================
+|Request type | ObjectType | Parent ObjectType | Endpoint | Query parameters | Description
+
+|Root Request | PROJECT | |GET `/rest/api/2/project/search` |`startAt=${LW_INDEX_START}&maxResults=${LW_BATCH_SIZE}`|Returns the Projects from the Jira instance.
+|Child Request | ISSUE |PROJECT |GET `/rest/api/2/search` |`fields=assignee,issuetype,priority,project,reporter,status,summary,updated` `&startAt=${LW_INDEX_START}&maxResults=${LW_BATCH_SIZE}` `&jql=project=${LW_PARENT_DATA_KEY`|Return the Issues (children) for each Project retrieved with the previous request PROJECT. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'project', which is extracted by setting the property `Response Handling -> parentDataKey=id`.
+|Child Request | COMMENT |ISSUE |GET `/rest/api/2/issue/${LW_PARENT_DATA_KEY}/comment` |`startAt=${LW_INDEX_START}&maxResults=${LW_BATCH_SIZE}`|Return the Comments (children) for each Issue retrieved with the previous request ISSUE. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'issue', which is extracted by setting the property `Response Handling -> parentDataKey=id`.
+|Child Request | WORKLOG |ISSUE |GET `/rest/api/2/issue/${LW_PARENT_DATA_KEY}/worklog` |`startAt=${LW_INDEX_START}&maxResults=${LW_BATCH_SIZE}`|Return the Worklogs (children) for each Issue retrieved with the previous request ISSUE. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'issue', which is extracted by setting the property `Response Handling -> parentDataKey=id`.
+|Child Request | ATTACHMENT_METADATA |ISSUE |GET `/rest/api/2/issue/${LW_PARENT_DATA_KEY}` |`fields=attachment`|Return an Issue object which includes a nested list of attachments. Then, the response is parsed to extract only the list of attachments metadata with `DataPath=fields.attachment[*]`. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'issue', which is extracted by setting the property `Response Handling -> parentDataKey=id`. This request enable the property 'Skip Indexation'
+|Child Request | ATTACHMENT_DOWNLOAD |ATTACHMENT_METADATA |GET `/rest/api/2/attachment/content/${LW_PARENT_DATA_KEY}` | |Download the attachment binary-content for each Attachment retrieved with the previous request ATTACHMENT_METADATA. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent 'issue', which is extracted by setting the property `Response Handling -> parentDataKey=id`.
+|=======================
+
+=== Notes
+* The requests are linked hierarchically by using the properties *ObjectType and ParentObjectType*.
+** It is to maintain the parent-child relationships between different level of objects. For instance, 1) an Issue is a Project's child, 2) a Comment is an Issue's child.
+
+
+== Response Parsing Configuration
+
+For each request-configuration, configure the property *Response Handling* to set up how to parse the response (`responseConfiguration` in the `jira-v2.json` file)
+
+=== Plugin Parsing:
+
+* This parsing happens by default. The responses are parsed as a JSON Object structure using JsonPath.
+* Plugin Parsing will happen for requests: PROJECT, ISSUE, COMMENT, WORKLOG, ATTACHMENT_METADATA
+** Note that the ATTACHMENT_METADATA is configured to extract the list of attachments from the Issue, by setting `Response Handling -> Data Path: fields.attachment[*]`.
+* Properties `Response Handling -> Data ID, Data Path` are configured to extract certain values from the Objects parsed.
+* Properties `Response Handling -> Parent Data Key` are configured to extract the 'id' of the parent object.
+
+=== Binary Parsing:
+
+* Enable by setting the property `Response Handling -> Parse Binary Data` (`binaryResponse` in the jira-v1.json` file). Send the whole response to the Fusion Parsers. If disabled (default), the response is parsed as a JSON object
+* Binary Parsing is configured for request: ATTACHMENT_DOWNLOAD
+
+== Skip Indexation of Objects
+
+When enabled, the response is not indexed. This is useful when objects are requested solely to discover their child objects, without needing to index the parent object itself.
+
+* For Jira Configuration:
+- Given a parent Request ATTACHMENT_METADATA, to retrieve a list of attachments metadata. The request is needed to discover the IDs of attachments to be downloaded in a following request.
+- Given a child  Request ATTACHMENT_DOWNLOAD to download the binary content from the attachments found previously
+- By default, both request will index two solr-docs that represents the same file:
+```
+1) doc-1: the attachment-metadata only (Request ATTACHMENT_METADATA)
+
+id: "serverURL_/rest/api/2/issue/issueID_attachmentID",
+filename_s: "file.txt",
+mimeType_s: "text/plain",
+_lw_rest_object_type_s: "attachment_metadata"
+```
+
+```
+2) doc-2: with the attachment-metadata joined with the file-content (Request ATTACHMENT_DOWNLOAD)
+
+id: "serverURL_/rest/api/2/attachment/content/attachmentID_attachmentID_binary",
+filename_s: "file.txt",
+mimeType_s: "text/plain",
+body_s: "body of txt"
+_lw_rest_object_type_s: "attachment_download"
+```
+- There is no need to index the first solr-doc. To avoid indexing this, the property *'Skip Indexation'* for the Request ATTACHMENT_METADATA is enabled in the 'jira-v2.json'.
+- If needed to avoid indexing another objects, enable the property *'Skip Indexation'* in the corresponding request configuration.
+
+
+== Terminology
+
+The following terms are provided as a reference.
+
+[options="header",cols="1s,1"]
+|=======================
+
+|Term|Description
+|List of Requests Configuration|Configure List of Requests to extract data from the Rest source. Requests are linked hierarchically by using the properties Parent-Child Request Link -> ObjectType and ParentObjectType.
+
+|Object Type| The unique name to identify the request.
+|Parent Object Type| Reference an existent Object Type. Create a parent-child hierarchy, where the current request becomes the child of the specified Parent Object Type. If blank, the current request is considered a Root-Request.
+
+|Root Request|The type of request-configuration to retrieve the initial parent objects.
+|Child Request|The type of request-configuration to retrieve children objects for parent object. A child-request can be a parent of another child-request, e.g. ISSUE is the child of PROJECT, and COMMENT is the child of ISSUE.
+
+|Response Handling| The Response Configuration. Defines the mapping between the response and data objects to be indexed.
+|Data Path|The path to access a specific data object within a response. For example, to access a list of elements named with key `objects`, the DataPath would be `objects`. If not provided, the entire response body will be indexed. This property accepts JsonPath expressions e.g. `values` to extract the list of projects, `attachments[*]` to extract the list of attachments from an Issue object.
+|Data ID|The identifier key for the data objects extracted with 'Data Path'. This value will be used to build the solr-document's ID. If not provided, a random UUID will be used. This property accepts JsonPath expressions, e.g. To identify an issue, DataPath could reference the issueKey `key`, or the issueId `id`.
+
+|Parent Data Key|Must configure with Child Requests. It maps to a key from the parent object, whose value will be used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example: if the issue (parent object) contains `{"id": 100}`, and the child-request COMMENT configures `/rest/api/2/issue/${LW_PARENT_DATA_KEY}/comment` and `parentDataKey=id`, then `${LW_PARENT_DATA_KEY}` will be replaced with `100` in the request.
+
+|_lw_rest_object_type_s| All objects index this field, which value is the 'ObjectType' of the request that retrieved the object.
+|_lw_rest_object_s| All objects index this field. Contains the objectId extracted with the property 'Data ID'. E.g.: For a project, indexes `_lw_rest_object_s: "TEST"`. For an issue, indexes `_lw_rest_object_s: "TEST-10"`, where "TEST" is the projectKey, and "TEST-10" is the issueKey
+|_lw_rest_parent_object_ss| All objects index this field, which value is a list of the objectIds inherited from all their parents, and the objectId from the object itself. E.g.: For a project, indexes _lw_rest_parent_object_ss: ["TEST"]. For a comment, indexes `_lw_rest_parent_object_ss: ["TEST", "TEST-10", "<commentId>"]`, where `<commentId>` is a numeric value, and TEST-10 is the issue where the comment belongs.
+
+|=======================
