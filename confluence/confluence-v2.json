@@ -281,7 +281,7 @@
             "queries": [
               {
                 "queryKey": "limit",
-                "queryValue": "25"
+                "queryValue": "50"
               },
               {
                 "queryKey": "body-format",
