@@ -3,7 +3,7 @@
   "parserId": "_system",
   "connector": "lucidworks.rest",
   "coreProperties": {},
-  "id": "rest-jira-v2",
+  "id": "rest-jira-v3",
   "type": "lucidworks.rest",
   "properties": {
     "collection": "{add collection name here}",
@@ -23,7 +23,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/rest/api/2/project/search",
+            "endpoint": "/rest/api/3/project/search",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -60,7 +60,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/rest/api/2/search",
+            "endpoint": "/rest/api/3/search/jql",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -106,7 +106,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/rest/api/2/issue/${LW_PARENT_DATA_KEY}/comment",
+            "endpoint": "/rest/api/3/issue/${LW_PARENT_DATA_KEY}/comment",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -144,7 +144,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/rest/api/2/issue/${LW_PARENT_DATA_KEY}/worklog",
+            "endpoint": "/rest/api/3/issue/${LW_PARENT_DATA_KEY}/worklog",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -182,7 +182,7 @@
           },
           "skipIndexation": true,
           "requestConfiguration": {
-            "endpoint": "/rest/api/2/issue/${LW_PARENT_DATA_KEY}",
+            "endpoint": "/rest/api/3/issue/${LW_PARENT_DATA_KEY}",
             "httpMethod": "GET",
             "queries": [
               {
@@ -208,7 +208,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/rest/api/2/attachment/content/${LW_PARENT_DATA_KEY}",
+            "endpoint": "/rest/api/3/attachment/content/${LW_PARENT_DATA_KEY}",
             "httpMethod": "GET"
           },
           "responseConfiguration": {
