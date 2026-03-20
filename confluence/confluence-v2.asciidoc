@@ -14,7 +14,11 @@ The Configuration is based on the Discovery of objects at Hierarchical Requests,
 
 The configuration uses the Confluence API v2.0 https://developer.atlassian.com/cloud/confluence/rest/v2
 
-* At August 5, 2026 the v1.0 deprecated endpoints that were used to obtain the objects mentioned above, will be removed. For more information, see https://community.developer.atlassian.com/t/update-to-confluence-v1-api-deprecation-timeline/79687/18[v1-api-deprecation-timeline]
+The deprecated Confluence v1 REST API endpoints required to obtain the object mentioned above have been gradually phased out over the years 2025 and 2026.
+For more information, see https://community.developer.atlassian.com/t/update-to-confluence-v1-api-deprecation-timeline/79687/18[v1-api-deprecation-timeline]
+and https://developer.atlassian.com/cloud/confluence/changelog/#.
+
+Therefore outdated configuration file `confluence-v1.json`, which depends on v1 endpoints, should not be used.
 
 The configuration was tested with Confluence Cloud
 
