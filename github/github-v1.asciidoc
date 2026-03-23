@@ -1,0 +1,218 @@
+== GitHub REST Configuration
+
+This documentation describes aspects of the GitHub REST `github-v1.json` file configuration such as the authentication methods, endpoints requested, data crawled, pagination information. Terminology is also provided as a reference.
+
+The GitHub REST Configuration will index each GitHub object listed below, as a separate solr document:
+
+* Repositories
+* Issues
+* Pull Requests
+* Commits
+* Branches
+* Tags
+* Milestones
+* Collaborators
+* Releases
+* Issue Comments
+* Pull Request Review Comments
+* Commit Comments
+
+The Configuration is based on the Discovery of objects at Hierarchical Requests, supported since plugin version rest-1.1.0
+
+The configuration uses the GitHub REST API v3 (2022-11-28) https://docs.github.com/en/rest
+
+The configuration was tested with GitHub Cloud (github.com). For GitHub Enterprise, update the `serviceURL` property to point to the enterprise instance API URL, e.g. `https://github.example.com/api/v3`.
+
+== Authentication methods
+
+Basic Authentication using the GitHub username and a Personal Access Token (PAT) as the password. For more information, see link:https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens[Managing your personal access tokens | GitHub Docs^].
+
+=== Classic Personal Access Token (PAT)
+
+For **public repositories only**, most endpoints require no additional scopes. However, crawling **private repositories** or **organization-private repositories** requires the following scopes:
+
+* `repo` - Full control of private repositories (grants access to all repository data)
+* `read:org` - Read organization membership (required for organization-private repositories and the collaborators endpoint)
+
+**Minimum recommended scopes:**
+
+* Public repositories only: `public_repo` + `read:org`
+* Private repositories: `repo` + `read:org`
+
+=== Fine-Grained Personal Access Token
+
+Fine-grained personal access tokens are also supported. Set the token's repository access to target the desired repositories, then grant the following **read-only** permissions:
+
+* **Metadata** (read) - Required for repository listing, collaborators, tags, and commit comments
+* **Contents** (read) - Required for commits, branches, and releases
+* **Issues** (read) - Required for issues, milestones, and issue comments
+* **Pull requests** (read) - Required for pull requests and pull request review comments
+
+=== Permissions by endpoint
+
+The following table shows the exact permissions required per endpoint for each token type:
+
+[cols="2,2,2,2",options="header"]
+|=======================
+|Endpoint |Fine-Grained Permission |Classic PAT (Public Repos) |Classic PAT (Private Repos)
+|`/orgs/{org}/repos` |Metadata: read |No scope needed |`repo` (`read:org` for private org repos)
+|`/repos/{o}/{r}/issues` |Issues: read |No scope needed |`repo`
+|`/repos/{o}/{r}/pulls` |Pull requests: read |No scope needed |`repo`
+|`/repos/{o}/{r}/commits` |Contents: read |No scope needed |`repo`
+|`/repos/{o}/{r}/branches` |Contents: read |No scope needed |`repo`
+|`/repos/{o}/{r}/tags` |Metadata: read |No scope needed |`repo`
+|`/repos/{o}/{r}/milestones` |Issues: read |No scope needed |`repo`
+|`/repos/{o}/{r}/collaborators` |Metadata: read |`repo` + `read:org` |`repo` + `read:org`
+|`/repos/{o}/{r}/releases` |Contents: read |No scope needed |`repo`
+|`/repos/{o}/{r}/issues/comments` |Issues: read |No scope needed |`repo`
+|`/repos/{o}/{r}/pulls/comments` |Pull requests: read |No scope needed |`repo`
+|`/repos/{o}/{r}/comments` |Metadata: read |No scope needed |`repo`
+|=======================
+
+NOTE: The **collaborators** endpoint is an outlier: in addition to the scopes listed above, the authenticated user must have **push (write), maintain, or admin** access to the repository. Without this level of access, the endpoint returns HTTP 403 regardless of token scopes. If the crawl account does not have write access to all repositories, consider removing the COLLABORATOR request configuration from the JSON to avoid 403 errors.
+
+NOTE: Draft releases are only visible to users with push (write) access to the repository.
+
+=== Rate limit impact
+
+Unauthenticated requests are limited to 60 requests per hour. Authenticated requests (with any valid PAT) are allowed 5,000 requests per hour. Always use an authenticated token to avoid rate limiting during crawls.
+
+== Supported crawl options
+
+* Full crawl:
+** All the content from the source is fetched.
+
+* Re-Crawl:
+** Per re-crawl, all the content from the source is retrieved as it were a full-crawl.
+** Orphan objects (deleted in the GitHub source that are not retrieved with a current crawl), will be deleted from the index using the strayContentDeletion feature from connectors-service, which is run when a crawl finishes.
+
+NOTE: The REST V2 connector does not support incremental crawling. Every crawl is a full crawl. The GitHub classic (V1) connector supported ETag-based incremental crawling via `If-None-Match` headers, which is not available in the REST recipe architecture.
+
+== Rate Limiting
+
+GitHub enforces a rate limit of 5,000 authenticated requests per hour. The configuration sets `numFetchThreads=2` to keep the request rate manageable. The `retryCount=3` with `maxDelayTime=60000` (60 seconds) provides resilience against transient errors and rate limit responses (HTTP 403/429).
+
+For organizations with many repositories, consider the total request volume: each repository triggers up to 12 child requests (one per entity type), and each child request paginates at 100 items per page. Monitor the `X-RateLimit-Remaining` response header in crawl logs to ensure the rate limit is not exceeded.
+
+For GitHub Enterprise instances, rate limits may differ. Consult your administrator.
+
+== Pagination Setup
+
+Pagination by Batch Size is configured per request, using a page-number approach.
+
+GitHub REST API uses page-based pagination with `page` and `per_page` query parameters. The API returns bare JSON arrays. When there are no more results, an empty array `[]` is returned.
+
+=== Configure the 'Pagination By BatchSize' properties:
+
+* `IndexStart: 1` - GitHub pages are 1-indexed (first page is page 1)
+* `BatchSize: 1` - Used to increment the page number by 1 each iteration. The `${LW_INDEX_START}` variable produces values 1, 2, 3, etc.
+* `Stop Condition Key: $` - References the root response (bare JSON array)
+* `Stop Condition Value: []` - Pagination stops when the response is an empty array
+
+=== Configure Query Params:
+
+* `per_page=100` - The maximum number of items GitHub returns per page
+* `page=${LW_INDEX_START}` - The current page number, auto-incremented by the connector
+
+NOTE: The `batchSize=1` setting is a technique to generate sequential page numbers (1, 2, 3...) from the `${LW_INDEX_START}` variable, since GitHub uses page-number pagination rather than offset-based pagination. The actual number of items per page is controlled by the fixed `per_page=100` query parameter.
+
+== Variables used
+
+The GitHub REST configuration variables used are:
+
+* `${LW_INDEX_START}` - Used with pagination feature. This variable is used to set the `page` query parameter, which is the page number to retrieve. GitHub pagination is 1-indexed. The connector increments this value by `batchSize` (1) after each page request, producing page numbers 1, 2, 3, etc.
+
+* `${LW_PARENT_DATA_KEY}` - Used with Child Request Configuration. This variable is replaced with the `full_name` of the parent repository object (e.g., `owner/repo-name`), which is extracted by setting the property `parentIdKey=full_name`. All child requests use this variable in their endpoint path to target the correct repository.
+
+== Endpoints Configuration with GitHub REST Connector
+
+* The following table describes the GitHub REST endpoints needed, and how those are configured with the rest-connector.
+* Each request is configured under the property *List of Requests Configuration* (`requestConfigurations` in the `github-v1.json` file)
+
+[cols="1,1,1,1,1,1",options="header"]
+|=======================
+|Request type | ObjectType | Parent ObjectType | Endpoint | Query parameters | Description
+|Root Request | REPOSITORY | |GET `/orgs/{org}/repos` |`per_page=100&page=${LW_INDEX_START}&type=all`|Returns the repositories belonging to the specified organization. Replace `{org}` in the endpoint with the target organization name.
+|Child Request | ISSUE |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/issues` |`per_page=100&page=${LW_INDEX_START}&state=all&filter=all`|Returns all issues (open and closed) for each repository. Note: GitHub's issues endpoint also returns pull requests. Each PR will have a `pull_request` key in the response. The variable `${LW_PARENT_DATA_KEY}` is replaced with the repository's `full_name` (e.g., `owner/repo`), extracted via `parentIdKey=full_name`.
+|Child Request | PULL_REQUEST |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/pulls` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all pull requests (open, closed, and merged) for each repository. Provides PR-specific fields such as `diff_url`, `merge_commit_sha`, `draft`, `head`, and `base` that are not available in the issues endpoint.
+|Child Request | COMMIT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/commits` |`per_page=100&page=${LW_INDEX_START}`|Returns commits from the default branch of each repository. To crawl commits from other branches, additional configuration is needed.
+|Child Request | BRANCH |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/branches` |`per_page=100&page=${LW_INDEX_START}`|Returns all branches for each repository. Uses `name` as the Data ID since branches do not have an `html_url` in the list response.
+|Child Request | TAG |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/tags` |`per_page=100&page=${LW_INDEX_START}`|Returns all tags for each repository. Uses `name` as the Data ID since tags do not have an `html_url` in the list response.
+|Child Request | MILESTONE |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/milestones` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all milestones (open and closed) for each repository.
+|Child Request | COLLABORATOR |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/collaborators` |`per_page=100&page=${LW_INDEX_START}`|Returns all collaborators for each repository. Requires the PAT to have push access to the repository; otherwise returns HTTP 403.
+|Child Request | RELEASE |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/releases` |`per_page=100&page=${LW_INDEX_START}`|Returns all releases for each repository, including draft releases.
+|Child Request | ISSUE_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/issues/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all issues (and pull requests) for the entire repository. Each comment includes an `issue_url` field linking back to the parent issue. Uses the repo-level endpoint to avoid nested parent key requirements.
+|Child Request | PR_REVIEW_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/pulls/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all review comments on all pull requests for the entire repository. Each comment includes `pull_request_url`, `diff_hunk`, `path`, and `line` fields. Uses the repo-level endpoint.
+|Child Request | COMMIT_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all commits for the entire repository. Each comment includes `commit_id` linking back to the parent commit. Uses the repo-level endpoint.
+|=======================
+
+=== Notes
+
+* The requests are linked hierarchically by using the properties *ObjectType and ParentObjectType*.
+** All child requests use REPOSITORY as their Parent ObjectType with `parentIdKey=full_name`. This flat hierarchy avoids the need for multi-level parent key substitution (e.g., needing both `owner/repo` and `issue_number` in a single endpoint path).
+** When objects are indexed, the field `_lw_rest_parent_object_ss` keeps the list of parents related to an object.
+
+* GitHub's `/repos/{owner}/{repo}/issues` endpoint returns both issues and pull requests. PRs can be identified by the presence of the `pull_request` key in the response object. The separate PULL_REQUEST request (`/pulls` endpoint) provides additional PR-specific fields. This means PRs appear in both ISSUE and PULL_REQUEST results with different field sets.
+
+* Comment endpoints use repo-level listing (`/issues/comments`, `/pulls/comments`, `/comments`) rather than per-issue or per-commit endpoints. This design avoids the need for nested parent key substitution. The parent entity can be identified using fields within each comment:
+** Issue comments: `issue_url` field
+** PR review comments: `pull_request_url` field
+** Commit comments: `commit_id` field
+
+* The COMMIT request returns commits from the default branch only. The GitHub classic (V1) connector crawled commits per branch with SHA-based deduplication to avoid re-indexing shared commits. This optimization is not available in the REST recipe architecture.
+
+* GitHub API responses are bare JSON arrays (e.g., `[{...}, {...}]`) rather than wrapped objects (e.g., `{"items": [...]}`). The `dataPath` is set to an empty string to handle this. If the connector does not correctly parse bare arrays, try `dataPath: "$"` as an alternative.
+
+== Differences from GitHub Classic (V1) Connector
+
+The following features from the GitHub Classic connector are not available in the REST recipe:
+
+[cols="1,1",options="header"]
+|=======================
+|Feature | Status
+|ETag-based incremental crawling |Not supported - REST V2 performs full crawls only
+|Commit SHA deduplication across branches |Not supported - commits may be re-indexed if crawled per branch
+|User login to full name resolution |Not supported - would require index pipeline enrichment via `/users/{login}` API calls
+|Conditional entity type toggles |Not supported - all configured request types are always executed. Remove request configurations from the JSON to exclude entity types
+|GitHub Enterprise self-signed SSL |Not configurable in recipe - configure at the Fusion platform level
+|=======================
+
+== Response Parsing Configuration
+
+Per request, configure the property *Response Handling* to set up how to parse the response (`responseConfiguration` in the `github-v1.json` file)
+
+=== Plugin Parsing:
+
+* This parsing happens by default. The responses are parsed as a JSON Object structure using JsonPath.
+* Plugin Parsing will happen for all the requests listed in the Table 'Endpoints Configuration with GitHub REST Connector'.
+* Properties `Response Handling -> Data ID` is configured to extract unique identifiers from the objects parsed. For most entities, `html_url` provides a globally unique, human-readable URL. For branches and tags, `name` is used since these entities lack `html_url` in list responses.
+* Properties `Response Handling -> Parent Data Key` is configured to extract the `full_name` of the parent repository object.
+
+=== Binary Parsing:
+* This property is not used with the `github-v1.json` configuration. File content (blob) downloads are not included in this version. To add blob downloading, a recursive CONTENT request targeting `/repos/{owner}/{repo}/contents` with a binary FILE_DOWNLOAD child request would be needed.
+
+== Terminology
+
+The following terms are provided as a reference.
+
+[options="header",cols="1s,1"]
+|=======================
+
+|Term|Description
+|List of Requests Configuration|Configure List of Requests to extract data from the Rest source. Requests are linked hierarchically by using the properties Parent-Child Request Link -> ObjectType and ParentObjectType.
+
+|Object Type| The unique name to identify the request.
+|Parent Object Type| Reference an existent Object Type. Create a parent-child hierarchy, where the current request becomes the child of the specified Parent Object Type. If blank, the current request is considered a Root-Request.
+
+|Root Request|The type of request-configuration to retrieve the initial parent objects.
+|Child Request|The type of request-configuration to retrieve children objects per each parent object. A child-request can be a parent of another child-request.
+
+|Response Handling| The responseConfiguration defines the mapping between the response and data objects to be indexed.
+|Data Path|The path to access a specific data object within a response. For GitHub endpoints that return bare JSON arrays, set to an empty string. This property accepts JsonPath expressions e.g. `results`, `items[*]`.
+|Data ID|The identifier key for the data objects extracted with 'Data Path'. This value will be used to build the solr-document's ID. If not provided, a random UUID will be used. This property accepts JsonPath expressions, e.g. `html_url` to extract the unique URL of an object.
+|Parent Data Key|Must configure with Child Requests. Map to a key from the parent object, whose value will be used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example, `/repos/${LW_PARENT_DATA_KEY}/issues` where `${LW_PARENT_DATA_KEY}` is replaced with the repository `full_name`.
+|_lw_rest_object_type_s| All objects index this field, which value is the 'ObjectType' of the request that retrieved the object, e.g. `REPOSITORY`, `ISSUE`, `PULL_REQUEST`, `COMMIT`.
+|_lw_rest_object_s| All objects index this field. Contains the objectId extracted with the property 'Data ID'. E.g.: For a repository, indexes `_lw_rest_object_s: "https://github.com/owner/repo"`. For an issue, indexes `_lw_rest_object_s: "https://github.com/owner/repo/issues/42"`.
+|_lw_rest_parent_object_ss| All objects index this field, which value is a list of the objectIds inherited from all their parents, and the objectId from the object itself. E.g.: For an issue, indexes `_lw_rest_parent_object_ss: ["https://github.com/owner/repo", "https://github.com/owner/repo/issues/42"]`.
+
+|=======================
