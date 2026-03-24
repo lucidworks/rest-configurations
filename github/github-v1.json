@@ -26,30 +26,8 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/orgs/{add org name here}/repos",
-            "pagination": {
-              "paginationByBatchSize": {
-                "paginationStopConditionValue": "[]",
-                "paginationStopConditionKey": "$",
-                "batchSize": 1,
-                "indexStart": 1
-              }
-            },
-            "httpMethod": "GET",
-            "queries": [
-              {
-                "queryKey": "per_page",
-                "queryValue": "100"
-              },
-              {
-                "queryKey": "page",
-                "queryValue": "${LW_INDEX_START}"
-              },
-              {
-                "queryKey": "type",
-                "queryValue": "all"
-              }
-            ]
+            "endpoint": "/repos/{add owner here}/{add repo name here}",
+            "httpMethod": "GET"
           },
           "responseConfiguration": {
             "dataId": "html_url",
@@ -488,6 +466,32 @@
             "dataId": "html_url",
             "binaryResponse": false,
             "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "CONTENT"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/git/trees/HEAD",
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "recursive",
+                "queryValue": "1"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "path",
+            "binaryResponse": false,
+            "dataPath": "tree",
             "parentIdKey": "full_name"
           }
         }

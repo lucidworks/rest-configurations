@@ -16,6 +16,7 @@ The GitHub REST Configuration will index each GitHub object listed below, as a s
 * Issue Comments
 * Pull Request Review Comments
 * Commit Comments
+* Content (file tree metadata)
 
 The Configuration is based on the Discovery of objects at Hierarchical Requests, supported since plugin version rest-1.1.0
 
@@ -55,7 +56,7 @@ The following table shows the exact permissions required per endpoint for each t
 [cols="2,2,2,2",options="header"]
 |=======================
 |Endpoint |Fine-Grained Permission |Classic PAT (Public Repos) |Classic PAT (Private Repos)
-|`/orgs/{org}/repos` |Metadata: read |No scope needed |`repo` (`read:org` for private org repos)
+|`/repos/{owner}/{repo}` |Metadata: read |No scope needed |`repo`
 |`/repos/{o}/{r}/issues` |Issues: read |No scope needed |`repo`
 |`/repos/{o}/{r}/pulls` |Pull requests: read |No scope needed |`repo`
 |`/repos/{o}/{r}/commits` |Contents: read |No scope needed |`repo`
@@ -67,6 +68,7 @@ The following table shows the exact permissions required per endpoint for each t
 |`/repos/{o}/{r}/issues/comments` |Issues: read |No scope needed |`repo`
 |`/repos/{o}/{r}/pulls/comments` |Pull requests: read |No scope needed |`repo`
 |`/repos/{o}/{r}/comments` |Metadata: read |No scope needed |`repo`
+|`/repos/{o}/{r}/git/trees/HEAD` |Contents: read |No scope needed |`repo`
 |=======================
 
 NOTE: The **collaborators** endpoint is an outlier: in addition to the scopes listed above, the authenticated user must have **push (write), maintain, or admin** access to the repository. Without this level of access, the endpoint returns HTTP 403 regardless of token scopes. If the crawl account does not have write access to all repositories, consider removing the COLLABORATOR request configuration from the JSON to avoid 403 errors.
@@ -98,7 +100,7 @@ For GitHub Enterprise instances, rate limits may differ. Consult your administra
 
 == Pagination Setup
 
-Pagination by Batch Size is configured per request, using a page-number approach.
+Pagination by Batch Size is configured per child request that returns paginated arrays, using a page-number approach. The REPOSITORY root request and the CONTENT child request do not use pagination — the REPOSITORY request returns a single JSON object, and the CONTENT request (Git Trees API) returns the full file tree in one response.
 
 GitHub REST API uses page-based pagination with `page` and `per_page` query parameters. The API returns bare JSON arrays. When there are no more results, an empty array `[]` is returned.
 
@@ -132,7 +134,7 @@ The GitHub REST configuration variables used are:
 [cols="1,1,1,1,1,1",options="header"]
 |=======================
 |Request type | ObjectType | Parent ObjectType | Endpoint | Query parameters | Description
-|Root Request | REPOSITORY | |GET `/orgs/{org}/repos` |`per_page=100&page=${LW_INDEX_START}&type=all`|Returns the repositories belonging to the specified organization. Replace `{org}` in the endpoint with the target organization name.
+|Root Request | REPOSITORY | |GET `/repos/{owner}/{repo-name}` |_(none)_|Returns a single repository object. Replace `{owner}` and `{repo-name}` with the target repository (e.g., `/repos/lucidworks/rest-configurations`). Duplicate this root request block for each repository you want to crawl. No pagination is needed since the endpoint returns a single JSON object.
 |Child Request | ISSUE |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/issues` |`per_page=100&page=${LW_INDEX_START}&state=all&filter=all`|Returns all issues (open and closed) for each repository. Note: GitHub's issues endpoint also returns pull requests. Each PR will have a `pull_request` key in the response. The variable `${LW_PARENT_DATA_KEY}` is replaced with the repository's `full_name` (e.g., `owner/repo`), extracted via `parentIdKey=full_name`.
 |Child Request | PULL_REQUEST |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/pulls` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all pull requests (open, closed, and merged) for each repository. Provides PR-specific fields such as `diff_url`, `merge_commit_sha`, `draft`, `head`, and `base` that are not available in the issues endpoint.
 |Child Request | COMMIT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/commits` |`per_page=100&page=${LW_INDEX_START}`|Returns commits from the default branch of each repository. To crawl commits from other branches, additional configuration is needed.
@@ -144,9 +146,12 @@ The GitHub REST configuration variables used are:
 |Child Request | ISSUE_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/issues/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all issues (and pull requests) for the entire repository. Each comment includes an `issue_url` field linking back to the parent issue. Uses the repo-level endpoint to avoid nested parent key requirements.
 |Child Request | PR_REVIEW_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/pulls/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all review comments on all pull requests for the entire repository. Each comment includes `pull_request_url`, `diff_hunk`, `path`, and `line` fields. Uses the repo-level endpoint.
 |Child Request | COMMIT_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all commits for the entire repository. Each comment includes `commit_id` linking back to the parent commit. Uses the repo-level endpoint.
+|Child Request | CONTENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/git/trees/HEAD` |`recursive=1`|Returns the full file tree (all files and directories) for the repository's default branch using the Git Trees API. Each entry includes `path`, `type` (blob or tree), `size`, `sha`, and `mode`. No pagination is needed; the API returns the entire tree in a single response. Uses `path` as the Data ID. For very large repos (>100k files), the response may be truncated (`"truncated": true`).
 |=======================
 
 === Notes
+
+* **Per-repo root requests**: The REPOSITORY root request targets a single repository via `/repos/{owner}/{repo-name}`. To crawl multiple repositories, duplicate the root REPOSITORY request block in the JSON configuration — one block per repository. Each root request returns a single JSON object (no pagination needed). All child requests automatically inherit the repository's `full_name` via `${LW_PARENT_DATA_KEY}`.
 
 * The requests are linked hierarchically by using the properties *ObjectType and ParentObjectType*.
 ** All child requests use REPOSITORY as their Parent ObjectType with `parentIdKey=full_name`. This flat hierarchy avoids the need for multi-level parent key substitution (e.g., needing both `owner/repo` and `issue_number` in a single endpoint path).
@@ -163,6 +168,8 @@ The GitHub REST configuration variables used are:
 
 * GitHub API responses are bare JSON arrays (e.g., `[{...}, {...}]`) rather than wrapped objects (e.g., `{"items": [...]}`). The `dataPath` is set to an empty string to handle this. If the connector does not correctly parse bare arrays, try `dataPath: "$"` as an alternative.
 
+* **CONTENT request**: The CONTENT request uses the Git Trees API (`/git/trees/HEAD?recursive=1`) to retrieve the full file tree of the repository's default branch in a single request. The `dataPath` is set to `tree` to extract the array of file entries from the wrapped response object. Each entry contains file metadata (`path`, `type`, `size`, `sha`, `mode`) but not file contents. Binary file content download is not supported because the blob download endpoint (`/repos/{owner}/{repo}/git/blobs/{sha}`) requires both the repository name and the blob SHA, but the REST connector only provides a single `${LW_PARENT_DATA_KEY}` variable per request level.
+
 == Differences from GitHub Classic (V1) Connector
 
 The following features from the GitHub Classic connector are not available in the REST recipe:
@@ -175,6 +182,8 @@ The following features from the GitHub Classic connector are not available in th
 |User login to full name resolution |Not supported - would require index pipeline enrichment via `/users/{login}` API calls
 |Conditional entity type toggles |Not supported - all configured request types are always executed. Remove request configurations from the JSON to exclude entity types
 |GitHub Enterprise self-signed SSL |Not configurable in recipe - configure at the Fusion platform level
+|File content (blob) indexing |Partially supported - file tree metadata (path, type, size, SHA) is indexed via the CONTENT request, but binary file content download is not supported due to the single parent-key variable limitation
+|Organization-wide repo discovery |Not supported - use per-repo root requests instead of `/orgs/{org}/repos`. The classic connector used `startLinks` to target specific repos; the REST recipe uses individual root request blocks
 |=======================
 
 == Response Parsing Configuration
@@ -189,7 +198,7 @@ Per request, configure the property *Response Handling* to set up how to parse t
 * Properties `Response Handling -> Parent Data Key` is configured to extract the `full_name` of the parent repository object.
 
 === Binary Parsing:
-* This property is not used with the `github-v1.json` configuration. File content (blob) downloads are not included in this version. To add blob downloading, a recursive CONTENT request targeting `/repos/{owner}/{repo}/contents` with a binary FILE_DOWNLOAD child request would be needed.
+* This property is not used with the `github-v1.json` configuration. The CONTENT request indexes file tree metadata (path, type, size, SHA) but does not download file contents. Binary blob download is not supported because the blob endpoint (`/repos/{owner}/{repo}/git/blobs/{sha}`) requires both the repository name and the blob SHA, but the REST connector only supports a single `${LW_PARENT_DATA_KEY}` variable per request level.
 
 == Terminology
 
