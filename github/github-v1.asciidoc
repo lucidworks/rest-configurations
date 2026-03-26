@@ -19,6 +19,8 @@ The GitHub REST Configuration will index each GitHub object listed below, as a s
 * Pull Request Review Comments
 * Commit Comments
 * Content (file tree metadata)
+* Labels
+* Issue Events
 
 The Configuration is based on the Discovery of objects at Hierarchical Requests, supported since plugin version rest-1.1.0
 
@@ -70,6 +72,8 @@ The following table shows the exact permissions required per endpoint for each t
 |`/repos/{o}/{r}/issues/comments` |Issues: read |No scope needed |`repo`
 |`/repos/{o}/{r}/pulls/comments` |Pull requests: read |No scope needed |`repo`
 |`/repos/{o}/{r}/comments` |Metadata: read |No scope needed |`repo`
+|`/repos/{o}/{r}/labels` |Metadata: read |No scope needed |`repo`
+|`/repos/{o}/{r}/issues/events` |Issues: read |No scope needed |`repo`
 |`/repos/{o}/{r}/git/trees/HEAD` |Contents: read |No scope needed |`repo`
 |=======================
 
@@ -96,7 +100,7 @@ NOTE: The REST V2 connector does not support incremental crawling. Every crawl i
 
 GitHub enforces a rate limit of 5,000 authenticated requests per hour. The configuration sets `numFetchThreads=2` to keep the request rate manageable. The `retryCount=3` with `maxDelayTime=60000` (60 seconds) provides resilience against transient errors and rate limit responses (HTTP 403/429).
 
-For repositories with large amounts of data, consider the total request volume: each repository triggers up to 12 child requests (one per entity type), and each child request paginates at 100 items per page. Monitor the `X-RateLimit-Remaining` response header in crawl logs to ensure the rate limit is not exceeded.
+For repositories with large amounts of data, consider the total request volume: each repository triggers up to 14 child requests (one per entity type), and each child request paginates at 100 items per page. Monitor the `X-RateLimit-Remaining` response header in crawl logs to ensure the rate limit is not exceeded.
 
 For GitHub Enterprise instances, rate limits may differ. Consult your administrator.
 
@@ -148,6 +152,8 @@ The GitHub REST configuration variables used are:
 |Child Request | ISSUE_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/issues/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all issues (and pull requests) for the entire repository. Each comment includes an `issue_url` field linking back to the parent issue. Uses the repo-level endpoint to avoid nested parent key requirements.
 |Child Request | PR_REVIEW_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/pulls/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all review comments on all pull requests for the entire repository. Each comment includes `pull_request_url`, `diff_hunk`, `path`, and `line` fields. Uses the repo-level endpoint.
 |Child Request | COMMIT_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all commits for the entire repository. Each comment includes `commit_id` linking back to the parent commit. Uses the repo-level endpoint.
+|Child Request | LABEL |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/labels` |`per_page=100&page=${LW_INDEX_START}`|Returns all labels defined in the repository. Each label includes `name`, `color`, `description`, and `url`. Uses `url` as the Data ID since label names may not be globally unique across repositories.
+|Child Request | ISSUE_EVENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/issues/events` |`per_page=100&page=${LW_INDEX_START}`|Returns the timeline of issue and pull request events (opened, closed, assigned, labeled, milestoned, etc.) for the entire repository. Each event includes `event`, `actor`, `issue`, and `created_at` fields. Uses `url` as the Data ID.
 |Child Request | CONTENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/git/trees/HEAD` |`recursive=1`|Returns the full file tree (all files and directories) for the repository's default branch using the Git Trees API. Each entry includes `path`, `type` (blob or tree), `size`, `sha`, and `mode`. No pagination is needed; the API returns the entire tree in a single response. Uses `path` as the Data ID. For very large repos (>100k files), the response may be truncated (`"truncated": true`).
 |=======================
 

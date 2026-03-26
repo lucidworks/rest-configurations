@@ -475,6 +475,82 @@
           "recursiveRequest": false,
           "linkRequest": {
             "parentObjectType": "REPOSITORY",
+            "objectType": "LABEL"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/labels",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "url",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "ISSUE_EVENT"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/issues/events",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "url",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
             "objectType": "CONTENT"
           },
           "skipIndexation": false,
