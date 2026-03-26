@@ -1,0 +1,70 @@
+{
+    "parserId": "{add parserid }",
+    "coreProperties": {},
+    "id": "confluence",
+    "type": "lucidworks.rest",
+    "properties": {
+        "serviceURL": "https://{add confluence instance}",
+        "authenticationMode": {
+            "basicAuth": {
+                "password": "xXx-Redacted-xXx",
+                "user": "add email address here!!!"
+            }
+        },
+        "serviceEndpoints": [
+            {
+                "childrenRequests": [
+                    {
+                        "dataRequest": {
+                            "endpoint": "/wiki/rest/api/content/${LW_PARENT_DATA_KEY}/child/comment",
+                            "httpMethod": "GET",
+                            "queries": [
+                                {
+                                    "queryKey": "expand",
+                                    "queryValue": "body.storage"
+                                }
+                            ]
+                        },
+                        "childResponseMapping": {
+                            "childDataPath": "results",
+                            "parentIdKey": "id"
+                        }
+                    }
+                ],
+                "rootRequest": {
+                    "dataRequest": {
+                        "endpoint": "/wiki/rest/api/content",
+                        "pagination": {
+                            "paginationByBatchSize": {
+                                "batchSize": 100,
+                                "indexStart": 0
+                            }
+                        },
+                        "httpMethod": "GET",
+                        "queries": [
+                            {
+                                "queryKey": "start",
+                                "queryValue": "${LW_INDEX_START}"
+                            },
+                            {
+                                "queryKey": "limit",
+                                "queryValue": "${LW_BATCH_SIZE}"
+                            },
+                            {
+                                "queryKey": "expand",
+                                "queryValue": "body.storage"
+                            }
+                        ]
+                    },
+                    "rootResponseMapping": {
+                        "dataId": "id",
+                        "dataPath": ""
+                    }
+                }
+            }
+        ],
+        "collection": "{add collection here}"
+    },
+    "pipeline": "{add pipeline name}",
+    "connector": "lucidworks.rest"
+}
