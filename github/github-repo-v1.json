@@ -3,7 +3,7 @@
   "pipeline": "{add pipeline here}",
   "connector": "lucidworks.rest",
   "coreProperties": {},
-  "id": "rest-github",
+  "id": "rest-github-repo",
   "type": "lucidworks.rest",
   "properties": {
     "collection": "{add collection here}",

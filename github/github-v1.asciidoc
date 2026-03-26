@@ -1,6 +1,8 @@
 == GitHub REST Configuration
 
-This documentation describes aspects of the GitHub REST `github-v1.json` file configuration such as the authentication methods, endpoints requested, data crawled, pagination information. Terminology is also provided as a reference.
+This documentation describes aspects of the GitHub REST configuration such as the authentication methods, endpoints requested, data crawled, pagination information. Terminology is also provided as a reference.
+
+The JSON template file `github-repo-v1.json` crawls a single specific repository via `/repos/{owner}/{repo}`. To crawl multiple repositories, create one datasource per repository.
 
 The GitHub REST Configuration will index each GitHub object listed below, as a separate solr document:
 
@@ -94,13 +96,13 @@ NOTE: The REST V2 connector does not support incremental crawling. Every crawl i
 
 GitHub enforces a rate limit of 5,000 authenticated requests per hour. The configuration sets `numFetchThreads=2` to keep the request rate manageable. The `retryCount=3` with `maxDelayTime=60000` (60 seconds) provides resilience against transient errors and rate limit responses (HTTP 403/429).
 
-For organizations with many repositories, consider the total request volume: each repository triggers up to 12 child requests (one per entity type), and each child request paginates at 100 items per page. Monitor the `X-RateLimit-Remaining` response header in crawl logs to ensure the rate limit is not exceeded.
+For repositories with large amounts of data, consider the total request volume: each repository triggers up to 12 child requests (one per entity type), and each child request paginates at 100 items per page. Monitor the `X-RateLimit-Remaining` response header in crawl logs to ensure the rate limit is not exceeded.
 
 For GitHub Enterprise instances, rate limits may differ. Consult your administrator.
 
 == Pagination Setup
 
-Pagination by Batch Size is configured per child request that returns paginated arrays, using a page-number approach. The REPOSITORY root request and the CONTENT child request do not use pagination — the REPOSITORY request returns a single JSON object, and the CONTENT request (Git Trees API) returns the full file tree in one response.
+Pagination by Batch Size is configured per child request that returns paginated arrays, using a page-number approach. The root REPOSITORY request does not use pagination since it returns a single JSON object. The CONTENT child request does not use pagination -- the Git Trees API returns the full file tree in one response.
 
 GitHub REST API uses page-based pagination with `page` and `per_page` query parameters. The API returns bare JSON arrays. When there are no more results, an empty array `[]` is returned.
 
@@ -129,12 +131,12 @@ The GitHub REST configuration variables used are:
 == Endpoints Configuration with GitHub REST Connector
 
 * The following table describes the GitHub REST endpoints needed, and how those are configured with the rest-connector.
-* Each request is configured under the property *List of Requests Configuration* (`requestConfigurations` in the `github-v1.json` file)
+* Each request is configured under the property *List of Requests Configuration* (`requestConfigurations` in the JSON files)
 
 [cols="1,1,1,1,1,1",options="header"]
 |=======================
 |Request type | ObjectType | Parent ObjectType | Endpoint | Query parameters | Description
-|Root Request | REPOSITORY | |GET `/repos/{owner}/{repo-name}` |_(none)_|Returns a single repository object. Replace `{owner}` and `{repo-name}` with the target repository (e.g., `/repos/lucidworks/rest-configurations`). Duplicate this root request block for each repository you want to crawl. No pagination is needed since the endpoint returns a single JSON object.
+|Root Request | REPOSITORY | |GET `/repos/{owner}/{repo-name}` |_(none)_|Returns a single repository object. Replace `{owner}` and `{repo-name}` with the target repository (e.g., `/repos/lucidworks/rest-configurations`). No pagination is needed since the endpoint returns a single JSON object. To crawl multiple repositories, create one datasource per repo.
 |Child Request | ISSUE |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/issues` |`per_page=100&page=${LW_INDEX_START}&state=all&filter=all`|Returns all issues (open and closed) for each repository. Note: GitHub's issues endpoint also returns pull requests. Each PR will have a `pull_request` key in the response. The variable `${LW_PARENT_DATA_KEY}` is replaced with the repository's `full_name` (e.g., `owner/repo`), extracted via `parentIdKey=full_name`.
 |Child Request | PULL_REQUEST |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/pulls` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all pull requests (open, closed, and merged) for each repository. Provides PR-specific fields such as `diff_url`, `merge_commit_sha`, `draft`, `head`, and `base` that are not available in the issues endpoint.
 |Child Request | COMMIT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/commits` |`per_page=100&page=${LW_INDEX_START}`|Returns commits from the default branch of each repository. To crawl commits from other branches, additional configuration is needed.
@@ -151,7 +153,9 @@ The GitHub REST configuration variables used are:
 
 === Notes
 
-* **Per-repo root requests**: The REPOSITORY root request targets a single repository via `/repos/{owner}/{repo-name}`. To crawl multiple repositories, duplicate the root REPOSITORY request block in the JSON configuration — one block per repository. Each root request returns a single JSON object (no pagination needed). All child requests automatically inherit the repository's `full_name` via `${LW_PARENT_DATA_KEY}`.
+* **Single-repo crawling**: The template uses `/repos/{owner}/{repo-name}` to target a single repository. Replace the placeholders in the endpoint with the target owner and repo name. To crawl multiple repositories, create one Fusion datasource per repository using this template.
+
+* **objectType uniqueness constraint**: The `requestConfigurations` pattern (used by the connectors-service framework) enforces that each `objectType` value must be unique across all request blocks. This means you cannot duplicate the root REPOSITORY block to crawl multiple repos in a single datasource. Attempting to do so will result in only the last REPOSITORY block being processed. To crawl multiple specific repos, create one datasource per repo.
 
 * The requests are linked hierarchically by using the properties *ObjectType and ParentObjectType*.
 ** All child requests use REPOSITORY as their Parent ObjectType with `parentIdKey=full_name`. This flat hierarchy avoids the need for multi-level parent key substitution (e.g., needing both `owner/repo` and `issue_number` in a single endpoint path).
@@ -183,12 +187,12 @@ The following features from the GitHub Classic connector are not available in th
 |Conditional entity type toggles |Not supported - all configured request types are always executed. Remove request configurations from the JSON to exclude entity types
 |GitHub Enterprise self-signed SSL |Not configurable in recipe - configure at the Fusion platform level
 |File content (blob) indexing |Partially supported - file tree metadata (path, type, size, SHA) is indexed via the CONTENT request, but binary file content download is not supported due to the single parent-key variable limitation
-|Organization-wide repo discovery |Not supported - use per-repo root requests instead of `/orgs/{org}/repos`. The classic connector used `startLinks` to target specific repos; the REST recipe uses individual root request blocks
+|Organization-wide repo discovery |Not supported - create one datasource per repository using the repo template (`github-repo-v1.json`)
 |=======================
 
 == Response Parsing Configuration
 
-Per request, configure the property *Response Handling* to set up how to parse the response (`responseConfiguration` in the `github-v1.json` file)
+Per request, configure the property *Response Handling* to set up how to parse the response (`responseConfiguration` in the JSON files)
 
 === Plugin Parsing:
 
@@ -198,7 +202,7 @@ Per request, configure the property *Response Handling* to set up how to parse t
 * Properties `Response Handling -> Parent Data Key` is configured to extract the `full_name` of the parent repository object.
 
 === Binary Parsing:
-* This property is not used with the `github-v1.json` configuration. The CONTENT request indexes file tree metadata (path, type, size, SHA) but does not download file contents. Binary blob download is not supported because the blob endpoint (`/repos/{owner}/{repo}/git/blobs/{sha}`) requires both the repository name and the blob SHA, but the REST connector only supports a single `${LW_PARENT_DATA_KEY}` variable per request level.
+* This property is not used with the GitHub configuration template. The CONTENT request indexes file tree metadata (path, type, size, SHA) but does not download file contents. Binary blob download is not supported because the blob endpoint (`/repos/{owner}/{repo}/git/blobs/{sha}`) requires both the repository name and the blob SHA, but the REST connector only supports a single `${LW_PARENT_DATA_KEY}` variable per request level.
 
 == Terminology
 
