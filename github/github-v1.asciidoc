@@ -19,6 +19,7 @@ The GitHub REST Configuration will index each GitHub object listed below, as a s
 * Pull Request Review Comments
 * Commit Comments
 * Content (file tree metadata)
+* Blobs (file content via binary parsing)
 * Labels
 * Issue Events
 
@@ -75,6 +76,7 @@ The following table shows the exact permissions required per endpoint for each t
 |`/repos/{o}/{r}/labels` |Metadata: read |No scope needed |`repo`
 |`/repos/{o}/{r}/issues/events` |Issues: read |No scope needed |`repo`
 |`/repos/{o}/{r}/git/trees/HEAD` |Contents: read |No scope needed |`repo`
+|`/repos/{o}/{r}/git/blobs/{sha}` |Contents: read |No scope needed |`repo`
 |=======================
 
 NOTE: The **collaborators** endpoint is an outlier: in addition to the scopes listed above, the authenticated user must have **push (write), maintain, or admin** access to the repository. Without this level of access, the endpoint returns HTTP 403 regardless of token scopes. If the crawl account does not have write access to all repositories, consider removing the COLLABORATOR request configuration from the JSON to avoid 403 errors.
@@ -100,13 +102,15 @@ NOTE: The REST V2 connector does not support incremental crawling. Every crawl i
 
 GitHub enforces a rate limit of 5,000 authenticated requests per hour. The configuration sets `numFetchThreads=2` to keep the request rate manageable. The `retryCount=3` with `maxDelayTime=60000` (60 seconds) provides resilience against transient errors and rate limit responses (HTTP 403/429).
 
-For repositories with large amounts of data, consider the total request volume: each repository triggers up to 14 child requests (one per entity type), and each child request paginates at 100 items per page. Monitor the `X-RateLimit-Remaining` response header in crawl logs to ensure the rate limit is not exceeded.
+For repositories with large amounts of data, consider the total request volume: each repository triggers up to 15 child requests (one per entity type), and each child request paginates at 100 items per page. Monitor the `X-RateLimit-Remaining` response header in crawl logs to ensure the rate limit is not exceeded.
+
+WARNING: The BLOB request attempts to fetch file content for every entry in the repository's file tree, including directories. A repository with 10,000 files and 500 directories will generate 10,500 API calls (10,000 successful blob downloads + 500 expected 404 errors for directories). For large repositories, this can quickly consume the 5,000 requests/hour rate limit. Consider removing the BLOB request configuration from the JSON if file content indexing is not needed or if the repository contains a very large number of files.
 
 For GitHub Enterprise instances, rate limits may differ. Consult your administrator.
 
 == Pagination Setup
 
-Pagination by Batch Size is configured per child request that returns paginated arrays, using a page-number approach. The root REPOSITORY request does not use pagination since it returns a single JSON object. The CONTENT child request does not use pagination -- the Git Trees API returns the full file tree in one response.
+Pagination by Batch Size is configured per child request that returns paginated arrays, using a page-number approach. The root REPOSITORY request does not use pagination since it returns a single JSON object. The CONTENT child request does not use pagination -- the Git Trees API returns the full file tree in one response. The BLOB child request does not use pagination -- each blob endpoint returns a single object for one file.
 
 GitHub REST API uses page-based pagination with `page` and `per_page` query parameters. The API returns bare JSON arrays. When there are no more results, an empty array `[]` is returned.
 
@@ -130,7 +134,7 @@ The GitHub REST configuration variables used are:
 
 * `${LW_INDEX_START}` - Used with pagination feature. This variable is used to set the `page` query parameter, which is the page number to retrieve. GitHub pagination is 1-indexed. The connector increments this value by `batchSize` (1) after each page request, producing page numbers 1, 2, 3, etc.
 
-* `${LW_PARENT_DATA_KEY}` - Used with Child Request Configuration. This variable is replaced with the `full_name` of the parent repository object (e.g., `owner/repo-name`), which is extracted by setting the property `parentIdKey=full_name`. All child requests use this variable in their endpoint path to target the correct repository.
+* `${LW_PARENT_DATA_KEY}` - Used with Child Request Configuration. This variable is replaced with the value of the `parentIdKey` field from the parent object's response. The connector requires `parentIdKey` on all child requests. In the repo template, most children set `parentIdKey=full_name` (required by the connector) but hardcode the `{owner}/{repo}` path in the endpoint rather than using `${LW_PARENT_DATA_KEY}`. The BLOB request is the exception — it uses `${LW_PARENT_DATA_KEY}` in its endpoint to receive the blob `sha` from the parent CONTENT object (set via `parentIdKey=sha` on the CONTENT response). In the org template (`github-org-v1.json`), all children use `${LW_PARENT_DATA_KEY}` in endpoints with `parentIdKey=full_name` to resolve the `owner/repo` path dynamically.
 
 == Endpoints Configuration with GitHub REST Connector
 
@@ -141,20 +145,21 @@ The GitHub REST configuration variables used are:
 |=======================
 |Request type | ObjectType | Parent ObjectType | Endpoint | Query parameters | Description
 |Root Request | REPOSITORY | |GET `/repos/{owner}/{repo-name}` |_(none)_|Returns a single repository object. Replace `{owner}` and `{repo-name}` with the target repository (e.g., `/repos/lucidworks/rest-configurations`). No pagination is needed since the endpoint returns a single JSON object. To crawl multiple repositories, create one datasource per repo.
-|Child Request | ISSUE |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/issues` |`per_page=100&page=${LW_INDEX_START}&state=all&filter=all`|Returns all issues (open and closed) for each repository. Note: GitHub's issues endpoint also returns pull requests. Each PR will have a `pull_request` key in the response. The variable `${LW_PARENT_DATA_KEY}` is replaced with the repository's `full_name` (e.g., `owner/repo`), extracted via `parentIdKey=full_name`.
-|Child Request | PULL_REQUEST |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/pulls` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all pull requests (open, closed, and merged) for each repository. Provides PR-specific fields such as `diff_url`, `merge_commit_sha`, `draft`, `head`, and `base` that are not available in the issues endpoint.
-|Child Request | COMMIT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/commits` |`per_page=100&page=${LW_INDEX_START}`|Returns commits from the default branch of each repository. To crawl commits from other branches, additional configuration is needed.
-|Child Request | BRANCH |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/branches` |`per_page=100&page=${LW_INDEX_START}`|Returns all branches for each repository. Uses `name` as the Data ID since branches do not have an `html_url` in the list response.
-|Child Request | TAG |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/tags` |`per_page=100&page=${LW_INDEX_START}`|Returns all tags for each repository. Uses `name` as the Data ID since tags do not have an `html_url` in the list response.
-|Child Request | MILESTONE |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/milestones` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all milestones (open and closed) for each repository.
-|Child Request | COLLABORATOR |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/collaborators` |`per_page=100&page=${LW_INDEX_START}`|Returns all collaborators for each repository. Requires the PAT to have push access to the repository; otherwise returns HTTP 403.
-|Child Request | RELEASE |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/releases` |`per_page=100&page=${LW_INDEX_START}`|Returns all releases for each repository, including draft releases.
-|Child Request | ISSUE_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/issues/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all issues (and pull requests) for the entire repository. Each comment includes an `issue_url` field linking back to the parent issue. Uses the repo-level endpoint to avoid nested parent key requirements.
-|Child Request | PR_REVIEW_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/pulls/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all review comments on all pull requests for the entire repository. Each comment includes `pull_request_url`, `diff_hunk`, `path`, and `line` fields. Uses the repo-level endpoint.
-|Child Request | COMMIT_COMMENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all commits for the entire repository. Each comment includes `commit_id` linking back to the parent commit. Uses the repo-level endpoint.
-|Child Request | LABEL |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/labels` |`per_page=100&page=${LW_INDEX_START}`|Returns all labels defined in the repository. Each label includes `name`, `color`, `description`, and `url`. Uses `url` as the Data ID since label names may not be globally unique across repositories.
-|Child Request | ISSUE_EVENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/issues/events` |`per_page=100&page=${LW_INDEX_START}`|Returns the timeline of issue and pull request events (opened, closed, assigned, labeled, milestoned, etc.) for the entire repository. Each event includes `event`, `actor`, `issue`, and `created_at` fields. Uses `url` as the Data ID.
-|Child Request | CONTENT |REPOSITORY |GET `/repos/${LW_PARENT_DATA_KEY}/git/trees/HEAD` |`recursive=1`|Returns the full file tree (all files and directories) for the repository's default branch using the Git Trees API. Each entry includes `path`, `type` (blob or tree), `size`, `sha`, and `mode`. No pagination is needed; the API returns the entire tree in a single response. Uses `path` as the Data ID. For very large repos (>100k files), the response may be truncated (`"truncated": true`).
+|Child Request | ISSUE |REPOSITORY |GET `/repos/{owner}/{repo}/issues` |`per_page=100&page=${LW_INDEX_START}&state=all&filter=all`|Returns all issues (open and closed) for the repository. Note: GitHub's issues endpoint also returns pull requests. Each PR will have a `pull_request` key in the response. The `{owner}/{repo}` path is hardcoded in the repo template since the target repository is known upfront.
+|Child Request | PULL_REQUEST |REPOSITORY |GET `/repos/{owner}/{repo}/pulls` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all pull requests (open, closed, and merged) for the repository. Provides PR-specific fields such as `diff_url`, `merge_commit_sha`, `draft`, `head`, and `base` that are not available in the issues endpoint.
+|Child Request | COMMIT |REPOSITORY |GET `/repos/{owner}/{repo}/commits` |`per_page=100&page=${LW_INDEX_START}`|Returns commits from the default branch of the repository. To crawl commits from other branches, additional configuration is needed.
+|Child Request | BRANCH |REPOSITORY |GET `/repos/{owner}/{repo}/branches` |`per_page=100&page=${LW_INDEX_START}`|Returns all branches for the repository. Uses `name` as the Data ID since branches do not have an `html_url` in the list response.
+|Child Request | TAG |REPOSITORY |GET `/repos/{owner}/{repo}/tags` |`per_page=100&page=${LW_INDEX_START}`|Returns all tags for the repository. Uses `name` as the Data ID since tags do not have an `html_url` in the list response.
+|Child Request | MILESTONE |REPOSITORY |GET `/repos/{owner}/{repo}/milestones` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all milestones (open and closed) for the repository.
+|Child Request | COLLABORATOR |REPOSITORY |GET `/repos/{owner}/{repo}/collaborators` |`per_page=100&page=${LW_INDEX_START}`|Returns all collaborators for the repository. Requires the PAT to have push access to the repository; otherwise returns HTTP 403.
+|Child Request | RELEASE |REPOSITORY |GET `/repos/{owner}/{repo}/releases` |`per_page=100&page=${LW_INDEX_START}`|Returns all releases for the repository, including draft releases.
+|Child Request | ISSUE_COMMENT |REPOSITORY |GET `/repos/{owner}/{repo}/issues/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all issues (and pull requests) for the entire repository. Each comment includes an `issue_url` field linking back to the parent issue. Uses the repo-level endpoint to avoid nested parent key requirements.
+|Child Request | PR_REVIEW_COMMENT |REPOSITORY |GET `/repos/{owner}/{repo}/pulls/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all review comments on all pull requests for the entire repository. Each comment includes `pull_request_url`, `diff_hunk`, `path`, and `line` fields. Uses the repo-level endpoint.
+|Child Request | COMMIT_COMMENT |REPOSITORY |GET `/repos/{owner}/{repo}/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all commits for the entire repository. Each comment includes `commit_id` linking back to the parent commit. Uses the repo-level endpoint.
+|Child Request | LABEL |REPOSITORY |GET `/repos/{owner}/{repo}/labels` |`per_page=100&page=${LW_INDEX_START}`|Returns all labels defined in the repository. Each label includes `name`, `color`, `description`, and `url`. Uses `url` as the Data ID since label names may not be globally unique across repositories.
+|Child Request | ISSUE_EVENT |REPOSITORY |GET `/repos/{owner}/{repo}/issues/events` |`per_page=100&page=${LW_INDEX_START}`|Returns the timeline of issue and pull request events (opened, closed, assigned, labeled, milestoned, etc.) for the entire repository. Each event includes `event`, `actor`, `issue`, and `created_at` fields. Uses `url` as the Data ID.
+|Child Request | CONTENT |REPOSITORY |GET `/repos/{owner}/{repo}/git/trees/HEAD` |`recursive=1`|Returns the full file tree (all files and directories) for the repository's default branch using the Git Trees API. Each entry includes `path`, `type` (blob or tree), `size`, `sha`, and `mode`. No pagination is needed; the API returns the entire tree in a single response. Uses `path` as the Data ID. Sets `parentIdKey=sha` so that the BLOB child request receives the blob SHA via `${LW_PARENT_DATA_KEY}`. For very large repos (>100k files), the response may be truncated (`"truncated": true`).
+|Child Request | BLOB |CONTENT |GET `/repos/{owner}/{repo}/git/blobs/${LW_PARENT_DATA_KEY}` |_(none)_|Downloads the file content for each blob in the file tree. The `${LW_PARENT_DATA_KEY}` is replaced with the blob `sha` from the parent CONTENT object. Uses `binaryResponse=true` to trigger Tika-based text extraction from file content. No pagination is needed; each blob endpoint returns a single object. Uses `sha` as the Data ID.
 |=======================
 
 === Notes
@@ -164,7 +169,7 @@ The GitHub REST configuration variables used are:
 * **objectType uniqueness constraint**: The `requestConfigurations` pattern (used by the connectors-service framework) enforces that each `objectType` value must be unique across all request blocks. This means you cannot duplicate the root REPOSITORY block to crawl multiple repos in a single datasource. Attempting to do so will result in only the last REPOSITORY block being processed. To crawl multiple specific repos, create one datasource per repo.
 
 * The requests are linked hierarchically by using the properties *ObjectType and ParentObjectType*.
-** All child requests use REPOSITORY as their Parent ObjectType with `parentIdKey=full_name`. This flat hierarchy avoids the need for multi-level parent key substitution (e.g., needing both `owner/repo` and `issue_number` in a single endpoint path).
+** Most child requests use REPOSITORY as their Parent ObjectType with `parentIdKey=full_name` (required by the connector for all child requests). In the repo template, child endpoints hardcode the `{owner}/{repo}` path — the `parentIdKey` is still set because the connector requires it, but the value is not used in endpoint construction. The CONTENT request sets `parentIdKey=sha` so its BLOB child receives the blob SHA via `${LW_PARENT_DATA_KEY}`.
 ** When objects are indexed, the field `_lw_rest_parent_object_ss` keeps the list of parents related to an object.
 
 * GitHub's `/repos/{owner}/{repo}/issues` endpoint returns both issues and pull requests. PRs can be identified by the presence of the `pull_request` key in the response object. The separate PULL_REQUEST request (`/pulls` endpoint) provides additional PR-specific fields. This means PRs appear in both ISSUE and PULL_REQUEST results with different field sets.
@@ -178,7 +183,9 @@ The GitHub REST configuration variables used are:
 
 * GitHub API responses are bare JSON arrays (e.g., `[{...}, {...}]`) rather than wrapped objects (e.g., `{"items": [...]}`). The `dataPath` is set to an empty string to handle this. If the connector does not correctly parse bare arrays, try `dataPath: "$"` as an alternative.
 
-* **CONTENT request**: The CONTENT request uses the Git Trees API (`/git/trees/HEAD?recursive=1`) to retrieve the full file tree of the repository's default branch in a single request. The `dataPath` is set to `tree` to extract the array of file entries from the wrapped response object. Each entry contains file metadata (`path`, `type`, `size`, `sha`, `mode`) but not file contents. Binary file content download is not supported because the blob download endpoint (`/repos/{owner}/{repo}/git/blobs/{sha}`) requires both the repository name and the blob SHA, but the REST connector only provides a single `${LW_PARENT_DATA_KEY}` variable per request level.
+* **CONTENT and BLOB requests**: The CONTENT request uses the Git Trees API (`/git/trees/HEAD?recursive=1`) to retrieve the full file tree of the repository's default branch in a single request. The `dataPath` is set to `tree` to extract the array of file entries from the wrapped response object. Each entry contains file metadata (`path`, `type`, `size`, `sha`, `mode`). The CONTENT response sets `parentIdKey=sha`, which passes each file's blob SHA to the child BLOB request via `${LW_PARENT_DATA_KEY}`. The BLOB request then downloads the file content from `/repos/{owner}/{repo}/git/blobs/{sha}` with `binaryResponse=true`, enabling Tika-based text extraction. This approach works because the repo template hardcodes the `{owner}/{repo}` path in all endpoints, freeing up `${LW_PARENT_DATA_KEY}` to carry the blob SHA.
++
+NOTE: The Git Trees API returns both files (`type: "blob"`) and directories (`type: "tree"`) in the same response. The REST connector spawns a BLOB child request for every CONTENT entry, including directories. Since directories are not blobs, the `/git/blobs/{sha}` call returns HTTP 404 for each directory entry. These errors are **expected and harmless** — the connector logs them and continues processing. The number of 404 errors equals the number of directories in the repository. All actual file blobs are downloaded and indexed successfully despite these errors.
 
 == Differences from GitHub Classic (V1) Connector
 
@@ -192,7 +199,7 @@ The following features from the GitHub Classic connector are not available in th
 |User login to full name resolution |Not supported - would require index pipeline enrichment via `/users/{login}` API calls
 |Conditional entity type toggles |Not supported - all configured request types are always executed. Remove request configurations from the JSON to exclude entity types
 |GitHub Enterprise self-signed SSL |Not configurable in recipe - configure at the Fusion platform level
-|File content (blob) indexing |Partially supported - file tree metadata (path, type, size, SHA) is indexed via the CONTENT request, but binary file content download is not supported due to the single parent-key variable limitation
+|File content (blob) indexing |Fully supported - file tree metadata is indexed via the CONTENT request, and file content is downloaded and parsed via the BLOB child request using `binaryResponse=true` with Tika text extraction. Note: each file generates one API call, so large repos may consume significant rate limit quota
 |Organization-wide repo discovery |Not supported - create one datasource per repository using the repo template (`github-repo-v1.json`)
 |=======================
 
@@ -205,10 +212,10 @@ Per request, configure the property *Response Handling* to set up how to parse t
 * This parsing happens by default. The responses are parsed as a JSON Object structure using JsonPath.
 * Plugin Parsing will happen for all the requests listed in the Table 'Endpoints Configuration with GitHub REST Connector'.
 * Properties `Response Handling -> Data ID` is configured to extract unique identifiers from the objects parsed. For most entities, `html_url` provides a globally unique, human-readable URL. For branches and tags, `name` is used since these entities lack `html_url` in list responses.
-* Properties `Response Handling -> Parent Data Key` is configured to extract the `full_name` of the parent repository object.
+* Properties `Response Handling -> Parent Data Key` is required by the connector on all child requests. Most children use `parentIdKey=full_name` to extract the repository's `full_name`. The CONTENT request uses `parentIdKey=sha` to pass the blob SHA to its BLOB child request via `${LW_PARENT_DATA_KEY}`.
 
 === Binary Parsing:
-* This property is not used with the GitHub configuration template. The CONTENT request indexes file tree metadata (path, type, size, SHA) but does not download file contents. Binary blob download is not supported because the blob endpoint (`/repos/{owner}/{repo}/git/blobs/{sha}`) requires both the repository name and the blob SHA, but the REST connector only supports a single `${LW_PARENT_DATA_KEY}` variable per request level.
+* The BLOB request uses `binaryResponse=true` to enable binary parsing. The GitHub blob endpoint (`/repos/{owner}/{repo}/git/blobs/{sha}`) returns file content as a base64-encoded JSON object. With binary response enabled, the connector passes the content to Apache Tika for text extraction, enabling full-text search over file contents. The CONTENT request (file tree metadata) does not use binary parsing.
 
 == Terminology
 
@@ -229,7 +236,7 @@ The following terms are provided as a reference.
 |Response Handling| The responseConfiguration defines the mapping between the response and data objects to be indexed.
 |Data Path|The path to access a specific data object within a response. For GitHub endpoints that return bare JSON arrays, set to an empty string. This property accepts JsonPath expressions e.g. `results`, `items[*]`.
 |Data ID|The identifier key for the data objects extracted with 'Data Path'. This value will be used to build the solr-document's ID. If not provided, a random UUID will be used. This property accepts JsonPath expressions, e.g. `html_url` to extract the unique URL of an object.
-|Parent Data Key|Must configure with Child Requests. Map to a key from the parent object, whose value will be used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). For example, `/repos/${LW_PARENT_DATA_KEY}/issues` where `${LW_PARENT_DATA_KEY}` is replaced with the repository `full_name`.
+|Parent Data Key|Required for all Child Requests. Map to a key from the parent object, whose value will be used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). In the repo template, most children set `parentIdKey=full_name` (required by the connector) but hardcode the `{owner}/{repo}` path in the endpoint. The CONTENT request sets `parentIdKey=sha` so its BLOB child receives the blob SHA via `${LW_PARENT_DATA_KEY}` (e.g., `/repos/{owner}/{repo}/git/blobs/${LW_PARENT_DATA_KEY}`).
 |_lw_rest_object_type_s| All objects index this field, which value is the 'ObjectType' of the request that retrieved the object, e.g. `REPOSITORY`, `ISSUE`, `PULL_REQUEST`, `COMMIT`.
 |_lw_rest_object_s| All objects index this field. Contains the objectId extracted with the property 'Data ID'. E.g.: For a repository, indexes `_lw_rest_object_s: "https://github.com/owner/repo"`. For an issue, indexes `_lw_rest_object_s: "https://github.com/owner/repo/issues/42"`.
 |_lw_rest_parent_object_ss| All objects index this field, which value is a list of the objectIds inherited from all their parents, and the objectId from the object itself. E.g.: For an issue, indexes `_lw_rest_parent_object_ss: ["https://github.com/owner/repo", "https://github.com/owner/repo/issues/42"]`.

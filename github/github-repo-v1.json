@@ -45,7 +45,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/issues",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/issues",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -91,7 +91,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/pulls",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/pulls",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -133,7 +133,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/commits",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/commits",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -171,7 +171,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/branches",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/branches",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -209,7 +209,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/tags",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/tags",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -247,7 +247,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/milestones",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/milestones",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -289,7 +289,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/collaborators",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/collaborators",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -327,7 +327,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/releases",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/releases",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -365,7 +365,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/issues/comments",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/issues/comments",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -403,7 +403,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/pulls/comments",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/pulls/comments",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -441,7 +441,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/comments",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/comments",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -479,7 +479,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/labels",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/labels",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -517,7 +517,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/issues/events",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/issues/events",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
@@ -555,7 +555,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/${LW_PARENT_DATA_KEY}/git/trees/HEAD",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/git/trees/HEAD",
             "httpMethod": "GET",
             "queries": [
               {
@@ -568,7 +568,27 @@
             "dataId": "path",
             "binaryResponse": false,
             "dataPath": "tree",
-            "parentIdKey": "full_name"
+            "parentIdKey": "sha"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "CONTENT",
+            "objectType": "BLOB"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/git/blobs/${LW_PARENT_DATA_KEY}",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "dataId": "sha",
+            "binaryResponse": true,
+            "dataPath": "",
+            "parentIdKey": "sha"
           }
         }
       }
