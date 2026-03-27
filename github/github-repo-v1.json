@@ -158,7 +158,27 @@
             "dataId": "html_url",
             "binaryResponse": false,
             "dataPath": "",
-            "parentIdKey": "full_name"
+            "parentIdKey": "sha"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "COMMIT",
+            "objectType": "COMMIT_DIFF"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/commits/${LW_PARENT_DATA_KEY}",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "dataId": "html_url",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "sha"
           }
         }
       },
