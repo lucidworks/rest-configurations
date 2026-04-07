@@ -8,9 +8,6 @@
   "properties": {
     "collection": "{add collection here}",
     "serviceURL": "https://api.github.com",
-    "numFetchThreads": 2,
-    "retryCount": 3,
-    "maxDelayTime": 60000,
     "authenticationMode": {
       "basicAuth": {
         "password": "{add personal access token here}",
@@ -526,7 +523,13 @@
           "skipIndexation": false,
           "requestConfiguration": {
             "endpoint": "/repos/{add owner here}/{add repo name here}/git/blobs/${LW_PARENT_DATA_KEY}",
-            "httpMethod": "GET"
+            "httpMethod": "GET",
+            "headers": [
+              {
+                "headerName": "Accept",
+                "headerValue": "application/vnd.github.raw+json"
+              }
+            ]
           },
           "responseConfiguration": {
             "dataId": "sha",
