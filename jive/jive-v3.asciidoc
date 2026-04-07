@@ -35,7 +35,7 @@ When pagination is performed, Jive returns a next page URL in the response, e.g.
         "next": "https://{jive_instance}"/api/core/v3/places?sort=dateCreatedAsc&fields=%40all&count=50&startIndex=50"
     },
 ```
-Internally, the connector will follow the next page URL until the pagination finishes. When `links.next` is not provided, it means no more pages are found,and pagination will stop.
+Internally, the connector will follow the next page URL until the pagination finishes. When `links.next` is not provided, it means no more pages are found, and pagination will stop.
 
 
 === Configure the 'Pagination By NextPageURL' property:
@@ -56,7 +56,7 @@ The Jive REST configuration variables used are:
 == Endpoints Configuration with Jive REST Connector
 
 * The following table describes the Jive REST endpoints needed, and how those are configured with the rest-connector.
-* Each requests in configured under the property *List of Requests Configuration* (`requestConfigurations` in the jive-v1.json` file)
+* Each requests in configured under the property *List of Requests Configuration* (`requestConfigurations` in the `jive-v1.json` file)
 
 [cols="1,1,1,1,1,1",options="header"]
 |=======================
@@ -67,7 +67,7 @@ The Jive REST configuration variables used are:
 |Child Request | ATTACHMENT_DOWNLOAD |ATTACHMENT_METADATA |GET `/api/core/v3/attachments/${LW_PARENT_DATA_KEY}/data` | |Download the content from each attachment retrieved with the previous request 'ATTACHMENT_METADATA'. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the file, which is extracted by setting the property `Response Handling -> parentDataKey=id`
 |Child Request | ANNOUNCEMENT_PLACE |PLACE |GET `/api/core/v3/places/${LW_PARENT_DATA_KEY}/announcements` |`startIndex=0&count=5&sort=dateCreatedAsc`|Returns list of announcements per each place retrieved with the previous request 'PLACE'. Internally, the variable `${LW_PARENT_DATA_KEY}` is replaced with the 'id' of the parent content, which is extracted by setting the property `Response Handling -> parentDataKey=placeID`.
 |Root Request | ANNOUNCEMENT_SYSTEM | |GET `/api/core/v3/announcements` |`startIndex=0&count=5&sort=dateCreatedAsc`|Returns list of announcements from the whole system.
-|Root Request | PEOPLE |PLACE |GET `/api/core/v3/people` |`startIndex=0&count=5&sort=dateCreatedAsc`|Returns the people registered in the jive instance`.
+|Root Request | PERSON | |GET `/api/core/v3/people` |`startIndex=0&count=5&sort=dateCreatedAsc`|Returns the people registered in the jive instance.
 
 |=======================
 
@@ -78,12 +78,12 @@ Per request, configure the property *Response Handling* to set up how to parse t
 === Plugin Parsing:
 
 * This parsing happens by default. The responses are parsed as a JSON Object structure using JsonPath.
-* Plugin Parsing will happen for requests: PLACE, CONTENT, ATTACHMENT_METADATA, ANNOUNCEMENT_PLACE, ANNOUNCEMENT_SYSTEM, PEOPLE
+* Plugin Parsing will happen for requests: PLACE, CONTENT, ATTACHMENT_METADATA, ANNOUNCEMENT_PLACE, ANNOUNCEMENT_SYSTEM, PERSON
 * Properties `Response Handling -> Data ID, Data Path` are configured to extract certain values from the Objects parsed.
 * Properties `Response Handling -> Parent Data Key` are configured to extract the 'id' of the parent object.
 
 === Binary Parsing:
-* Enable by setting the property `Response Handling -> Parse Binary Data` (`binaryResponse` in the jive-v1.json` file). Send the whole response to the Fusion Parsers. If disabled (default), the response is parsed as a JSON object
+* Enable by setting the property `Response Handling -> Parse Binary Data` (`binaryResponse` in the `jive-v1.json` file). Send the whole response to the Fusion Parsers. If disabled (default), the response is parsed as a JSON object
 * This parsing is configured for request: ATTACHMENT_DOWNLOAD
 
 == Skip Indexation of Objects
