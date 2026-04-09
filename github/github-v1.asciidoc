@@ -24,7 +24,7 @@ The GitHub REST Configuration will index each GitHub object listed below, as a s
 
 The Configuration is based on the Discovery of objects at Hierarchical Requests, supported since plugin version rest-1.1.0
 
-The configuration uses the GitHub REST API v3 (2022-11-28) https://docs.github.com/en/rest
+The configuration uses the GitHub REST API. The endpoints do not explicitly specify a version; they default to `2022-11-28`. See https://docs.github.com/en/rest/about-the-rest-api/api-versions[API Versions | GitHub Docs^] for details.
 
 The configuration was tested with GitHub Cloud (github.com). For GitHub Enterprise, update the `serviceURL` property to point to the enterprise instance API URL, e.g. `https://github.example.com/api/v3`.
 
@@ -178,9 +178,9 @@ The GitHub REST configuration variables used are:
 
 * GitHub API responses are bare JSON arrays (e.g., `[{...}, {...}]`) rather than wrapped objects (e.g., `{"items": [...]}`). The `dataPath` is set to an empty string to handle this. If the connector does not correctly parse bare arrays, try `dataPath: "$"` as an alternative.
 
-* **CONTENT and BLOB requests**: The CONTENT request uses the Git Trees API (`/git/trees/HEAD?recursive=1`) to retrieve the full file tree of the repository's default branch in a single request. The `dataPath` is set to `tree` to extract the array of file entries from the wrapped response object. Each entry contains file metadata (`path`, `type`, `size`, `sha`, `mode`). The CONTENT response sets `parentIdKey=sha`, which passes each file's blob SHA to the child BLOB request via `${LW_PARENT_DATA_KEY}`. The BLOB request then downloads the file content from `/repos/{owner}/{repo}/git/blobs/{sha}` with `binaryResponse=true`, enabling Tika-based text extraction. This approach works because the repo template hardcodes the `{owner}/{repo}` path in all endpoints, freeing up `${LW_PARENT_DATA_KEY}` to carry the blob SHA.
-+
-NOTE: The Git Trees API returns both files (`type: "blob"`) and directories (`type: "tree"`) in the same response. The REST connector spawns a BLOB child request for every CONTENT entry, including directories. Since directories are not blobs, the `/git/blobs/{sha}` call returns HTTP 404 for each directory entry. These errors are **expected and harmless** — the connector logs them and continues processing. The number of 404 errors equals the number of directories in the repository. All actual file blobs are downloaded and indexed successfully despite these errors.
+* **CONTENT and BLOB requests**: The CONTENT request uses the Git Trees API (`/repos/{owner}/{repo}/git/trees/HEAD?recursive=1`) to retrieve the complete file tree of the repository's default branch in a single call. Each entry contains file metadata (`path`, `type`, `size`, `sha`, `mode`). The tree includes both blob entries (files) and tree entries (directories). The CONTENT response sets `parentIdKey=sha`, which passes each entry's SHA to the child BLOB request via `${LW_PARENT_DATA_KEY}`. The BLOB request then downloads the file content from `/repos/{owner}/{repo}/git/blobs/{sha}` with `binaryResponse=true`, enabling Tika-based text extraction. This approach works because the repo template hardcodes the `{owner}/{repo}` path in all endpoints, freeing up `${LW_PARENT_DATA_KEY}` to carry the blob SHA.
+
+NOTE: The CONTENT response includes both file entries (`type: "blob"`) and directory entries (`type: "tree"`). When the BLOB child request attempts to fetch a directory SHA from the blobs endpoint, GitHub returns a 404 error. These 404 errors are expected and harmless but do consume rate limit quota. A repository with 500 directories will generate 500 additional 404 responses.
 
 == Response Parsing Configuration
 
@@ -194,7 +194,7 @@ Per request, configure the property *Response Handling* to set up how to parse t
 * Properties `Response Handling -> Parent Data Key` is required by the connector on all child requests. Most children use `parentIdKey=full_name` to extract the repository's `full_name`. The CONTENT request uses `parentIdKey=sha` to pass the blob SHA to its BLOB child request via `${LW_PARENT_DATA_KEY}`. The COMMIT request uses `parentIdKey=sha` to pass the commit SHA to its COMMIT_DIFF child request via `${LW_PARENT_DATA_KEY}`.
 
 === Binary Parsing:
-* The BLOB request uses `binaryResponse=true` to enable binary parsing. The request includes the `Accept: application/vnd.github.raw+json` header so the GitHub blob endpoint (`/repos/{owner}/{repo}/git/blobs/{sha}`) returns raw binary file content instead of a base64-encoded JSON object. With binary response enabled, the connector passes the raw content directly to Apache Tika for text extraction, enabling full-text search over file contents. The CONTENT request (file tree metadata) does not use binary parsing.
+* The BLOB request uses `binaryResponse=true` to enable binary parsing. The request includes the `Accept: application/vnd.github.raw+json` header so the GitHub blob endpoint (`/repos/{owner}/{repo}/git/blobs/{sha}`) returns raw binary file content instead of a base64-encoded JSON object. With binary response enabled, the connector passes the raw content directly to Apache Tika for text extraction.
 
 == Terminology
 
