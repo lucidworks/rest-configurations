@@ -494,22 +494,36 @@
             "parentObjectType": "REPOSITORY",
             "objectType": "CONTENT"
           },
-          "skipIndexation": false,
+          "skipIndexation": true,
           "requestConfiguration": {
-            "endpoint": "/repos/{add owner here}/{add repo name here}/git/trees/HEAD",
-            "httpMethod": "GET",
-            "queries": [
-              {
-                "queryKey": "recursive",
-                "queryValue": "1"
-              }
-            ]
+            "endpoint": "/repos/{add owner here}/{add repo name here}/contents",
+            "httpMethod": "GET"
           },
           "responseConfiguration": {
-            "dataId": "path",
+            "dataId": "html_url",
             "binaryResponse": false,
-            "dataPath": "tree",
-            "parentIdKey": "sha"
+            "dataPath": "",
+            "parentIdKey": "path"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": true,
+          "linkRequest": {
+            "parentObjectType": "CONTENT",
+            "objectType": "FOLDER"
+          },
+          "skipIndexation": true,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/contents/${LW_PARENT_DATA_KEY}",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "dataId": "html_url",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "path"
           }
         }
       },
@@ -517,12 +531,12 @@
         "request": {
           "recursiveRequest": false,
           "linkRequest": {
-            "parentObjectType": "CONTENT",
+            "parentObjectType": "FOLDER",
             "objectType": "BLOB"
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/repos/{add owner here}/{add repo name here}/git/blobs/${LW_PARENT_DATA_KEY}",
+            "endpoint": "/repos/{add owner here}/{add repo name here}/contents/${LW_PARENT_DATA_KEY}",
             "httpMethod": "GET",
             "headers": [
               {
@@ -532,10 +546,10 @@
             ]
           },
           "responseConfiguration": {
-            "dataId": "sha",
+            "dataId": "path",
             "binaryResponse": true,
             "dataPath": "",
-            "parentIdKey": "sha"
+            "parentIdKey": "path"
           }
         }
       }
