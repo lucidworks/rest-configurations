@@ -38,6 +38,52 @@
           "recursiveRequest": false,
           "linkRequest": {
             "parentObjectType": "REPOSITORY",
+            "objectType": "ISSUE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/issues",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "state",
+                "queryValue": "all"
+              },
+              {
+                "queryKey": "filter",
+                "queryValue": "all"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "html_url",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
             "objectType": "PULL_REQUEST"
           },
           "skipIndexation": false,
@@ -341,6 +387,44 @@
           "skipIndexation": false,
           "requestConfiguration": {
             "endpoint": "/repos/{add owner here}/{add repo name here}/issues/comments",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "html_url",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "PR_REVIEW_COMMENT"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/pulls/comments",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
