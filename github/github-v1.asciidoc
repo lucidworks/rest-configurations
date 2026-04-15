@@ -7,17 +7,15 @@ The JSON template file `github-repo-v1.json` crawls a single specific repository
 The GitHub REST Configuration will index each GitHub object listed below, as a separate solr document:
 
 * Repositories
-* Issues
 * Pull Requests
-* Commits
-* Commit Diffs (per-commit file changes and stats)
 * Branches
+* Commits (per-branch via BRANCH parent)
+* Commit Diffs (per-file change details for each commit)
 * Tags
 * Milestones
 * Collaborators
 * Releases
 * Issue Comments
-* Pull Request Review Comments
 * Commit Comments
 * Content (root directory listing)
 * Folders (recursive directory traversal)
@@ -51,8 +49,8 @@ Fine-grained personal access tokens are also supported. Set the token's reposito
 
 * **Metadata** (read) - Required for repository listing, collaborators, tags, and commit comments
 * **Contents** (read) - Required for commits, branches, and releases
-* **Issues** (read) - Required for issues, milestones, and issue comments
-* **Pull requests** (read) - Required for pull requests and pull request review comments
+* **Issues** (read) - Required for milestones and issue comments
+* **Pull requests** (read) - Required for pull requests
 
 === Permissions by endpoint
 
@@ -62,7 +60,6 @@ The following table shows the exact permissions required per endpoint for each t
 |=======================
 |Endpoint |Fine-Grained Permission |Classic PAT (Public Repos) |Classic PAT (Private Repos)
 |`/repos/{owner}/{repo}` |Metadata: read |No scope needed |`repo`
-|`/repos/{o}/{r}/issues` |Issues: read |No scope needed |`repo`
 |`/repos/{o}/{r}/pulls` |Pull requests: read |No scope needed |`repo`
 |`/repos/{o}/{r}/commits` |Contents: read |No scope needed |`repo`
 |`/repos/{o}/{r}/commits/{sha}` |Contents: read |No scope needed |`repo`
@@ -72,7 +69,6 @@ The following table shows the exact permissions required per endpoint for each t
 |`/repos/{o}/{r}/collaborators` |Metadata: read |`repo` + `read:org` |`repo` + `read:org`
 |`/repos/{o}/{r}/releases` |Contents: read |No scope needed |`repo`
 |`/repos/{o}/{r}/issues/comments` |Issues: read |No scope needed |`repo`
-|`/repos/{o}/{r}/pulls/comments` |Pull requests: read |No scope needed |`repo`
 |`/repos/{o}/{r}/comments` |Metadata: read |No scope needed |`repo`
 |`/repos/{o}/{r}/contents/{path}` |Contents: read |No scope needed |`repo`
 |=======================
@@ -98,7 +94,7 @@ Unauthenticated requests are limited to 60 requests per hour. Authenticated requ
 
 GitHub enforces a rate limit of 5,000 authenticated requests per hour. Retry properties (`retryCount`, `maxDelayTime`) can be configured under the datasource's retry settings to provide resilience against transient errors and rate limit responses (HTTP 403/429), though the default values are typically sufficient.
 
-For repositories with large amounts of data, consider the total request volume: each repository triggers up to 15 child requests (one per entity type), and each child request paginates at 100 items per page.
+For repositories with large amounts of data, consider the total request volume: each repository triggers up to 13 child requests (one per entity type), and each child request paginates at 100 items per page. Additionally, COMMIT crawls per-branch (child of BRANCH), so the total commit API calls scale with the number of branches.
 
 NOTE: The CONTENT, FOLDER, and BLOB requests use the GitHub Contents API (`/repos/{owner}/{repo}/contents/{path}`) to crawl repository file content. Unlike the previous Git Trees/Blobs approach, this does not produce 404 errors since the Contents API natively handles both files and directories. However, each directory level requires a separate API call (one request per directory). File downloads via `/contents/{path}` with the `Accept: application/vnd.github.raw+json` header count against the API rate limit. For large repositories with many directories and files, this can consume the 5,000 requests/hour rate limit. Consider removing the CONTENT, FOLDER, and BLOB request configurations from the JSON if file content indexing is not needed.
 
@@ -106,7 +102,7 @@ For GitHub Enterprise instances, rate limits may differ. Consult your administra
 
 == Pagination Setup
 
-Pagination by Batch Size is configured per child request that returns paginated arrays, using a page-number approach. The following child requests use pagination: ISSUE, PULL_REQUEST, COMMIT, BRANCH, TAG, MILESTONE, COLLABORATOR, RELEASE, ISSUE_COMMENT, PR_REVIEW_COMMENT, COMMIT_COMMENT.
+Pagination by Batch Size is configured per child request that returns paginated arrays, using a page-number approach. The following child requests use pagination: PULL_REQUEST, COMMIT, BRANCH, TAG, MILESTONE, COLLABORATOR, RELEASE, ISSUE_COMMENT, COMMIT_COMMENT.
 
 GitHub REST API uses page-based pagination with `page` and `per_page` query parameters. The API returns bare JSON arrays. When there are no more results, an empty array `[]` is returned.
 
@@ -130,7 +126,7 @@ The GitHub REST configuration variables used are:
 
 * `${LW_INDEX_START}` - Used with pagination feature. This variable is used to set the `page` query parameter, which is the page number to retrieve. GitHub pagination is 1-indexed. The connector increments this value by `batchSize` (1) after each page request, producing page numbers 1, 2, 3, etc.
 
-* `${LW_PARENT_DATA_KEY}` - Used with Child Request Configuration. This variable is replaced with the value of the `parentIdKey` field from the parent object's response. The connector requires `parentIdKey` on all child requests. In the repo template, most children set `parentIdKey=full_name` (required by the connector) but hardcode the `{owner}/{repo}` path in the endpoint rather than using `${LW_PARENT_DATA_KEY}`. The CONTENT request sets `parentIdKey=path` so its FOLDER child receives the file/directory path via `${LW_PARENT_DATA_KEY}` in its endpoint (`/contents/${LW_PARENT_DATA_KEY}`). The FOLDER request also sets `parentIdKey=path`, enabling recursive directory traversal and passing the path to its BLOB child. The BLOB request uses `${LW_PARENT_DATA_KEY}` in its endpoint to download file content from `/contents/${LW_PARENT_DATA_KEY}`. Similarly, the COMMIT request sets `parentIdKey=sha` so the COMMIT_DIFF child receives the commit SHA via `${LW_PARENT_DATA_KEY}` in its endpoint (`/commits/${LW_PARENT_DATA_KEY}`). In the org template (`github-org-v1.json`), all children use `${LW_PARENT_DATA_KEY}` in endpoints with `parentIdKey=full_name` to resolve the `owner/repo` path dynamically.
+* `${LW_PARENT_DATA_KEY}` - Used with Child Request Configuration. This variable is replaced with the value of the `parentIdKey` field from the parent object's response. The connector requires `parentIdKey` on all child requests. In the repo template, most children set `parentIdKey=full_name` (required by the connector) but hardcode the `{owner}/{repo}` path in the endpoint rather than using `${LW_PARENT_DATA_KEY}`. The BRANCH request sets `parentIdKey=name` so its COMMIT child receives the branch name via `${LW_PARENT_DATA_KEY}` in the `sha` query parameter (`sha=${LW_PARENT_DATA_KEY}`), enabling per-branch commit crawling. The COMMIT request sets `parentIdKey=sha` so the COMMIT_DIFF child receives the commit SHA via `${LW_PARENT_DATA_KEY}` in its endpoint (`/commits/${LW_PARENT_DATA_KEY}`). The CONTENT request sets `parentIdKey=path` so its FOLDER child receives the file/directory path via `${LW_PARENT_DATA_KEY}` in its endpoint (`/contents/${LW_PARENT_DATA_KEY}`). The FOLDER request also sets `parentIdKey=path`, enabling recursive directory traversal and passing the path to its BLOB child. The BLOB request uses `${LW_PARENT_DATA_KEY}` in its endpoint to download file content from `/contents/${LW_PARENT_DATA_KEY}`. In the org template (`github-org-v1.json`), all children use `${LW_PARENT_DATA_KEY}` in endpoints with `parentIdKey=full_name` to resolve the `owner/repo` path dynamically.
 
 == Endpoints Configuration with GitHub REST Connector
 
@@ -141,17 +137,15 @@ The GitHub REST configuration variables used are:
 |=======================
 |Request type | ObjectType | Parent ObjectType | Endpoint | Query parameters | Description
 |Root Request | REPOSITORY | |GET `/repos/{owner}/{repo-name}` |_(none)_|Returns a single repository object. Replace `{owner}` and `{repo-name}` with the target repository (e.g., `/repos/lucidworks/rest-configurations`). No pagination is needed since the endpoint returns a single JSON object. To crawl multiple repositories, create one datasource per repo.
-|Child Request | ISSUE |REPOSITORY |GET `/repos/{owner}/{repo}/issues` |`per_page=100&page=${LW_INDEX_START}&state=all&filter=all`|Returns all issues (open and closed) for the repository. Note: GitHub's issues endpoint also returns pull requests. Each PR will have a `pull_request` key in the response. The `{owner}/{repo}` path is hardcoded in the repo template since the target repository is known upfront.
-|Child Request | PULL_REQUEST |REPOSITORY |GET `/repos/{owner}/{repo}/pulls` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all pull requests (open, closed, and merged) for the repository. Provides PR-specific fields such as `diff_url`, `merge_commit_sha`, `draft`, `head`, and `base` that are not available in the issues endpoint.
-|Child Request | COMMIT |REPOSITORY |GET `/repos/{owner}/{repo}/commits` |`per_page=100&page=${LW_INDEX_START}`|Returns commits from the default branch of the repository. Sets `parentIdKey=sha` so its COMMIT_DIFF child receives the commit SHA via `${LW_PARENT_DATA_KEY}`. To crawl commits from other branches, additional configuration is needed.
-|Child Request | COMMIT_DIFF |COMMIT |GET `/repos/{owner}/{repo}/commits/${LW_PARENT_DATA_KEY}` |_(none)_|Fetches the single-commit detail for each commit, which includes file-level changes (`files` array with `filename`, `status`, `additions`, `deletions`, `changes`, `patch`) and aggregate stats (`stats` object with `total`, `additions`, `deletions`). The `${LW_PARENT_DATA_KEY}` is replaced with the commit `sha` from the parent COMMIT object. No pagination is needed; each endpoint returns a single commit object.
-|Child Request | BRANCH |REPOSITORY |GET `/repos/{owner}/{repo}/branches` |`per_page=100&page=${LW_INDEX_START}`|Returns all branches for the repository. Uses `name` as the Data ID since branches do not have an `html_url` in the list response.
+|Child Request | PULL_REQUEST |REPOSITORY |GET `/repos/{owner}/{repo}/pulls` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all pull requests (open, closed, and merged) for the repository. Provides PR-specific fields such as `diff_url`, `merge_commit_sha`, `draft`, `head`, and `base`.
+|Child Request | COMMIT |BRANCH |GET `/repos/{owner}/{repo}/commits` |`sha=${LW_PARENT_DATA_KEY}&per_page=100&page=${LW_INDEX_START}`|Returns commits per branch. The `sha` query parameter receives the branch name from the parent BRANCH entity via `${LW_PARENT_DATA_KEY}` (parentIdKey=name). Sets `parentIdKey=sha` so its COMMIT_DIFF child receives the commit SHA. Note: commits reachable from multiple branches will be indexed once per branch.
+|Child Request | COMMIT_DIFF |COMMIT |GET `/repos/{owner}/{repo}/commits/${LW_PARENT_DATA_KEY}` |_(none)_|Fetches the single-commit detail for each commit and indexes one document per changed file. Uses `dataPath=files` to iterate over the `files` array, creating a separate Solr document for each file entry with fields such as `filename`, `status`, `additions`, `deletions`, `changes`, `patch`, `blob_url`, `raw_url`, and `contents_url`. Uses `blob_url` as the Data ID, matching the classic GitHub connector's per-file document model. The `${LW_PARENT_DATA_KEY}` is replaced with the commit `sha` from the parent COMMIT object. No pagination is needed; each endpoint returns a single commit object. Note: commit-level fields (`commit.message`, `commit.author`, `stats`) are not indexed on these documents since `dataPath=files` extracts only the file entries.
+|Child Request | BRANCH |REPOSITORY |GET `/repos/{owner}/{repo}/branches` |`per_page=100&page=${LW_INDEX_START}`|Returns all branches for the repository. Uses `name` as the Data ID since branches do not have an `html_url` in the list response. Sets `parentIdKey=name` so its COMMIT child receives the branch name via `${LW_PARENT_DATA_KEY}` in the `sha` query parameter.
 |Child Request | TAG |REPOSITORY |GET `/repos/{owner}/{repo}/tags` |`per_page=100&page=${LW_INDEX_START}`|Returns all tags for the repository. Uses `name` as the Data ID since tags do not have an `html_url` in the list response.
 |Child Request | MILESTONE |REPOSITORY |GET `/repos/{owner}/{repo}/milestones` |`per_page=100&page=${LW_INDEX_START}&state=all`|Returns all milestones (open and closed) for the repository.
 |Child Request | COLLABORATOR |REPOSITORY |GET `/repos/{owner}/{repo}/collaborators` |`per_page=100&page=${LW_INDEX_START}`|Returns all collaborators for the repository. Requires the PAT to have push access to the repository; otherwise returns HTTP 403.
 |Child Request | RELEASE |REPOSITORY |GET `/repos/{owner}/{repo}/releases` |`per_page=100&page=${LW_INDEX_START}`|Returns all releases for the repository, including draft releases.
 |Child Request | ISSUE_COMMENT |REPOSITORY |GET `/repos/{owner}/{repo}/issues/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all issues (and pull requests) for the entire repository. Each comment includes an `issue_url` field linking back to the parent issue. Uses the repo-level endpoint to avoid nested parent key requirements.
-|Child Request | PR_REVIEW_COMMENT |REPOSITORY |GET `/repos/{owner}/{repo}/pulls/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all review comments on all pull requests for the entire repository. Each comment includes `pull_request_url`, `diff_hunk`, `path`, and `line` fields. Uses the repo-level endpoint.
 |Child Request | COMMIT_COMMENT |REPOSITORY |GET `/repos/{owner}/{repo}/comments` |`per_page=100&page=${LW_INDEX_START}`|Returns all comments on all commits for the entire repository. Each comment includes `commit_id` linking back to the parent commit. Uses the repo-level endpoint.
 |Child Request | CONTENT |REPOSITORY |GET `/repos/{owner}/{repo}/contents` |_(none)_|Lists the root directory entries of the repository's default branch using the Contents API. Each entry includes `name`, `path`, `type` (file or dir), `size`, `sha`, and `html_url`. Uses `skipIndexation=true` — exists only for discovery. Sets `parentIdKey=path` so the FOLDER child receives the file/directory path via `${LW_PARENT_DATA_KEY}`.
 |Child Request | FOLDER |CONTENT |GET `/repos/{owner}/{repo}/contents/${LW_PARENT_DATA_KEY}` |_(none)_|Recursively walks subdirectories using `path` from the parent. Uses `recursiveRequest=true` to traverse all directory levels (similar to the Alfresco pattern). Uses `skipIndexation=true` — exists only for discovery. Sets `parentIdKey=path` so the BLOB child receives the file path via `${LW_PARENT_DATA_KEY}`.
@@ -165,23 +159,25 @@ The GitHub REST configuration variables used are:
 * **objectType uniqueness constraint**: The `requestConfigurations` pattern enforces that each `objectType` value must be unique across all request blocks. This means you cannot duplicate the root REPOSITORY block to crawl multiple repos in a single datasource. Attempting to do so will result in only the last REPOSITORY block being processed. To crawl multiple specific repos, create one datasource per repo.
 
 * The requests are linked hierarchically by using the properties *ObjectType and ParentObjectType*.
-** Most child requests use REPOSITORY as their Parent ObjectType with `parentIdKey=full_name` (required by the connector for all child requests). In the repo template, child endpoints hardcode the `{owner}/{repo}` path — the `parentIdKey` is still set because the connector requires it, but the value is not used in endpoint construction. The CONTENT request sets `parentIdKey=path` so its FOLDER child receives the file/directory path via `${LW_PARENT_DATA_KEY}`. FOLDER also sets `parentIdKey=path` so its BLOB child receives the file path via `${LW_PARENT_DATA_KEY}`. This creates a CONTENT → FOLDER → BLOB chain using `parentIdKey=path` throughout. Similarly, the COMMIT request sets `parentIdKey=sha` so its COMMIT_DIFF child receives the commit SHA via `${LW_PARENT_DATA_KEY}`.
+** Most child requests use REPOSITORY as their Parent ObjectType with `parentIdKey=full_name` (required by the connector for all child requests). In the repo template, child endpoints hardcode the `{owner}/{repo}` path — the `parentIdKey` is still set because the connector requires it, but the value is not used in endpoint construction. The CONTENT request sets `parentIdKey=path` so its FOLDER child receives the file/directory path via `${LW_PARENT_DATA_KEY}`. FOLDER also sets `parentIdKey=path` so its BLOB child receives the file path via `${LW_PARENT_DATA_KEY}`. This creates a CONTENT → FOLDER → BLOB chain using `parentIdKey=path` throughout. BRANCH is a child of REPOSITORY with `parentIdKey=name`, creating a BRANCH → COMMIT chain where the branch name is passed via `${LW_PARENT_DATA_KEY}` in the `sha` query parameter. The COMMIT request sets `parentIdKey=sha` so its COMMIT_DIFF child receives the commit SHA via `${LW_PARENT_DATA_KEY}`, creating a BRANCH → COMMIT → COMMIT_DIFF chain.
 ** When objects are indexed, the field `_lw_rest_parent_object_ss` keeps the list of parents related to an object.
 
-* GitHub's `/repos/{owner}/{repo}/issues` endpoint returns both issues and pull requests. PRs can be identified by the presence of the `pull_request` key in the response object. The separate PULL_REQUEST request (`/pulls` endpoint) provides additional PR-specific fields. This means PRs appear in both ISSUE and PULL_REQUEST results with different field sets.
-
-* Comment endpoints use repo-level listing (`/issues/comments`, `/pulls/comments`, `/comments`) rather than per-issue or per-commit endpoints. This design avoids the need for nested parent key substitution. The parent entity can be identified using fields within each comment:
+* Comment endpoints use repo-level listing (`/issues/comments`, `/comments`) rather than per-issue or per-commit endpoints. This design avoids the need for nested parent key substitution. The parent entity can be identified using fields within each comment:
 ** Issue comments: `issue_url` field
-** PR review comments: `pull_request_url` field
 ** Commit comments: `commit_id` field
 
-* The COMMIT_DIFF request re-fetches each commit via the single-commit detail endpoint (`/repos/{owner}/{repo}/commits/{sha}`) to obtain the `files` array and `stats` object, which are not included in the list commits response (`/repos/{owner}/{repo}/commits`). This means each commit generates one additional API call. For repositories with many commits, this can significantly increase the total request volume and rate limit consumption.
+* The COMMIT request is a child of BRANCH and crawls commits per-branch using the `sha` query parameter set to `${LW_PARENT_DATA_KEY}` (which resolves to the branch name from the parent BRANCH entity via `parentIdKey=name`). This crawls commits across all branches, not just the default branch. Note: commits reachable from multiple branches will be indexed once per branch. The COMMIT_DIFF request re-fetches each commit via the single-commit detail endpoint (`/repos/{owner}/{repo}/commits/{sha}`) and uses `dataPath=files` to extract the `files` array, creating one Solr document per changed file. This matches the classic GitHub connector's per-file document model, where each changed file is independently searchable with fields like `filename_s`, `status_s`, `additions_l`, `deletions_l`, `changes_l`, `patch_t`, `blob_url_s`, `raw_url_s`, and `contents_url_s`. Uses `blob_url` as the Data ID. Note: commit-level metadata (`commit.message`, `commit.author`, `stats`) is not indexed on COMMIT_DIFF documents since only the `files` array is extracted — use the parent COMMIT document for commit-level information. Each commit generates one additional API call, and a commit that modifies N files produces N Solr documents.
 
 * GitHub API responses are bare JSON arrays (e.g., `[{...}, {...}]`) rather than wrapped objects (e.g., `{"items": [...]}`). The `dataPath` is set to an empty string to handle this. If the connector does not correctly parse bare arrays, try `dataPath: "$"` as an alternative.
 
 * **CONTENT, FOLDER, and BLOB requests**: The configuration uses the GitHub Contents API (`/repos/{owner}/{repo}/contents/{path}`) to crawl repository file content, following a recursive directory traversal pattern similar to the Alfresco connector. The CONTENT request lists the root directory via `/repos/{owner}/{repo}/contents`, returning entries for each file and directory. The FOLDER request recursively walks subdirectories using `recursiveRequest=true` — each directory entry triggers a new request to `/repos/{owner}/{repo}/contents/{path}`, which returns the directory's children. The BLOB request downloads raw file content from the same `/contents/{path}` endpoint using the `Accept: application/vnd.github.raw+json` header with `binaryResponse=true`, enabling Tika-based text extraction. Both CONTENT and FOLDER use `skipIndexation=true` — they exist only for discovery and do not create Solr documents. Only BLOB entries are indexed. This approach produces no 404 errors since the Contents API natively handles both files and directories. GitHub returns both file and directory entries in the same response; the connector handles them via the FOLDER/BLOB child request split.
 
 NOTE: Each directory level requires a separate API call. A deeply nested repository will generate more API requests than a flat one. However, this approach avoids the 404 errors that occurred with the previous Git Trees/Blobs approach and is consistent with how the classic GitHub connector works.
+
+[[Known Limitations]]
+=== Known Limitations
+
+* **Per-branch commit deduplication**: The COMMIT entity crawls commits per-branch (child of BRANCH), which means commits reachable from multiple branches are indexed once per branch. The classic GitHub connector deduplicates commits globally by SHA, so the REST connector may produce slightly more commit and commit_diff documents than the classic connector for repositories with shared commit history across branches.
 
 == Response Parsing Configuration
 
@@ -191,8 +187,8 @@ Per request, configure the property *Response Handling* to set up how to parse t
 
 * This parsing happens by default. The responses are parsed as a JSON Object structure using JsonPath.
 * Plugin Parsing will happen for all the requests listed in the Table 'Endpoints Configuration with GitHub REST Connector', except the BLOB request which uses binary parsing. The CONTENT and FOLDER requests also use plugin parsing but with `skipIndexation=true` — they parse the JSON response to discover files and directories without creating Solr documents.
-* Properties `Response Handling -> Data ID` is configured to extract unique identifiers from the objects parsed. For most entities, `html_url` provides a globally unique, human-readable URL. For branches and tags, `name` is used since these entities lack `html_url` in list responses.
-* Properties `Response Handling -> Parent Data Key` is required by the connector on all child requests. Most children use `parentIdKey=full_name` to extract the repository's `full_name`. The CONTENT and FOLDER requests use `parentIdKey=path` to pass file/directory paths to their child requests via `${LW_PARENT_DATA_KEY}`. The COMMIT request uses `parentIdKey=sha` to pass the commit SHA to its COMMIT_DIFF child request via `${LW_PARENT_DATA_KEY}`.
+* Properties `Response Handling -> Data ID` is configured to extract unique identifiers from the objects parsed. For most entities, `html_url` provides a globally unique, human-readable URL. For branches and tags, `name` is used since these entities lack `html_url` in list responses. For COMMIT_DIFF, `blob_url` is used since `dataPath=files` extracts per-file entries that each have a unique `blob_url`.
+* Properties `Response Handling -> Parent Data Key` is required by the connector on all child requests. Most children use `parentIdKey=full_name` to extract the repository's `full_name`. The BRANCH request uses `parentIdKey=name` to pass the branch name to its COMMIT child request via `${LW_PARENT_DATA_KEY}` in the `sha` query parameter. The COMMIT request uses `parentIdKey=sha` to pass the commit SHA to its COMMIT_DIFF child request via `${LW_PARENT_DATA_KEY}`. The CONTENT and FOLDER requests use `parentIdKey=path` to pass file/directory paths to their child requests via `${LW_PARENT_DATA_KEY}`.
 
 === Binary Parsing:
 * The BLOB request uses `binaryResponse=true` to enable binary parsing. The request includes the `Accept: application/vnd.github.raw+json` header so the GitHub Contents API endpoint (`/repos/{owner}/{repo}/contents/{path}`) returns raw binary file content instead of a base64-encoded JSON object. With binary response enabled, the connector passes the raw content directly to Apache Tika for text extraction.
@@ -214,11 +210,11 @@ The following terms are provided as a reference.
 |Child Request|The type of request-configuration to retrieve children objects per each parent object. A child-request can be a parent of another child-request.
 
 |Response Handling| The responseConfiguration defines the mapping between the response and data objects to be indexed.
-|Data Path|The path to access a specific data object within a response. For GitHub endpoints that return bare JSON arrays, set to an empty string. This property accepts JsonPath expressions e.g. `results`, `items[*]`.
+|Data Path|The path to access a specific data object within a response. For GitHub endpoints that return bare JSON arrays, set to an empty string. The COMMIT_DIFF request uses `dataPath=files` to extract the `files` array from the single-commit detail response, creating one document per changed file. This property accepts JsonPath expressions e.g. `results`, `items[*]`.
 |Data ID|The identifier key for the data objects extracted with 'Data Path'. This value will be used to build the solr-document's ID. If not provided, a random UUID will be used. This property accepts JsonPath expressions, e.g. `html_url` to extract the unique URL of an object.
-|Parent Data Key|Required for all Child Requests. Map to a key from the parent object, whose value will be used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). In the repo template, most children set `parentIdKey=full_name` (required by the connector) but hardcode the `{owner}/{repo}` path in the endpoint. The CONTENT and FOLDER requests set `parentIdKey=path` so their child requests receive the file/directory path via `${LW_PARENT_DATA_KEY}` (e.g., `/repos/{owner}/{repo}/contents/${LW_PARENT_DATA_KEY}`).
-|_lw_rest_object_type_s| All objects index this field, which value is the 'ObjectType' of the request that retrieved the object, e.g. `REPOSITORY`, `ISSUE`, `PULL_REQUEST`, `COMMIT`.
-|_lw_rest_object_s| All objects index this field. Contains the objectId extracted with the property 'Data ID'. E.g.: For a repository, indexes `_lw_rest_object_s: "https://github.com/owner/repo"`. For an issue, indexes `_lw_rest_object_s: "https://github.com/owner/repo/issues/42"`.
-|_lw_rest_parent_object_ss| All objects index this field, which value is a list of the objectIds inherited from all their parents, and the objectId from the object itself. E.g.: For an issue, indexes `_lw_rest_parent_object_ss: ["https://github.com/owner/repo", "https://github.com/owner/repo/issues/42"]`.
+|Parent Data Key|Required for all Child Requests. Map to a key from the parent object, whose value will be used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). In the repo template, most children set `parentIdKey=full_name` (required by the connector) but hardcode the `{owner}/{repo}` path in the endpoint. The BRANCH request sets `parentIdKey=name` so its COMMIT child receives the branch name via `${LW_PARENT_DATA_KEY}` in the `sha` query parameter. The CONTENT and FOLDER requests set `parentIdKey=path` so their child requests receive the file/directory path via `${LW_PARENT_DATA_KEY}` (e.g., `/repos/{owner}/{repo}/contents/${LW_PARENT_DATA_KEY}`).
+|_lw_rest_object_type_s| All objects index this field, which value is the 'ObjectType' of the request that retrieved the object, e.g. `REPOSITORY`, `PULL_REQUEST`, `COMMIT`, `BRANCH`.
+|_lw_rest_object_s| All objects index this field. Contains the objectId extracted with the property 'Data ID'. E.g.: For a repository, indexes `_lw_rest_object_s: "https://github.com/owner/repo"`. For a pull request, indexes `_lw_rest_object_s: "https://github.com/owner/repo/pull/42"`.
+|_lw_rest_parent_object_ss| All objects index this field, which value is a list of the objectIds inherited from all their parents, and the objectId from the object itself. E.g.: For a pull request, indexes `_lw_rest_parent_object_ss: ["https://github.com/owner/repo", "https://github.com/owner/repo/pull/42"]`.
 
 |=======================
