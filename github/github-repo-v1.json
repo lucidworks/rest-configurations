@@ -460,7 +460,7 @@
             "httpMethod": "GET",
             "headers": [
               {
-                "headerName": "Accept",
+                "headerKey": "Accept",
                 "headerValue": "application/vnd.github.raw+json"
               }
             ]
