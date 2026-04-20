@@ -135,13 +135,7 @@ The GitHub REST configuration variables used are:
 * The following table describes the GitHub REST endpoints needed, and how those are configured with the rest-connector.
 * Each request is configured under the property *List of Requests Configuration* (`requestConfigurations` in the JSON files)
 
-++++
-<style>
-  table td:nth-child(5) { word-break: break-word; }
-</style>
-++++
-
-[%autowidth.stretch,options="header"]
+[cols="1,1,1,1,1,1",options="header"]
 |=======================
 |Request type | ObjectType | Parent ObjectType | Endpoint | Query parameters | Description
 |Root Request | REPOSITORY | |GET `/repos/{owner}/{repo-name}` |_(none)_|Returns a single repository object. Replace `{owner}` and `{repo-name}` with the target repository (e.g., `/repos/lucidworks/rest-configurations`). No pagination is needed since the endpoint returns a single JSON object. To crawl multiple repositories, create one datasource per repo.
@@ -178,8 +172,14 @@ Per request, configure the property *Response Handling* to set up how to parse t
 
 * This parsing happens by default. The responses are parsed as a JSON Object structure using JsonPath.
 * Plugin Parsing will happen for all the requests listed in the Table 'Endpoints Configuration with GitHub REST Connector', except the BLOB request which uses binary parsing. The CONTENT and FOLDER requests also use plugin parsing but with `skipIndexation=true` — they parse the JSON response to discover files and directories without creating Solr documents.
-* Properties `Response Handling -> Data ID` is configured to extract unique identifiers from the objects parsed. For most entities, `html_url` provides a globally unique, human-readable URL. For branches and tags, `name` is used since these entities lack `html_url` in list responses. For COMMIT_DIFF, `blob_url` is used since `dataPath=files` extracts per-file entries that each have a unique `blob_url`.
-* Properties `Response Handling -> Parent Data Key` is required by the connector on all child requests. It specifies which field to extract from the parent response object; that value replaces `${LW_PARENT_DATA_KEY}` in the child request's endpoint or query parameters. Most children use `parentIdKey=full_name` to extract the repository's `full_name` from the parent REPOSITORY object. The COMMIT request uses `parentIdKey=name` to extract the branch name from its parent BRANCH object, passing it as `${LW_PARENT_DATA_KEY}` in the `sha` query parameter. The COMMIT_DIFF request uses `parentIdKey=sha` to extract the commit SHA from its parent COMMIT object, passing it as `${LW_PARENT_DATA_KEY}` in the endpoint. The FOLDER request uses `parentIdKey=path` to extract the directory path from its parent CONTENT object, and the BLOB request uses `parentIdKey=path` to extract the file path from its parent FOLDER object.
+* Properties `Response Handling -> Data ID` is configured to extract unique identifiers from the objects parsed. For most entities, `html_url` provides a globally unique, human-readable URL.
+** For branches and tags, `name` is used since these entities lack `html_url` in list responses.
+** For COMMIT_DIFF, `blob_url` is used since `dataPath=files` extracts per-file entries that each have a unique `blob_url`.
+* Properties `Response Handling -> Parent Data Key` is required by the connector on all child requests. It specifies which field to extract from the parent response object; that value replaces `${LW_PARENT_DATA_KEY}` in the child request's endpoint or query parameters.
+** The COMMIT request uses `parentIdKey=name` to extract the branch name from its parent BRANCH object, passing it as `${LW_PARENT_DATA_KEY}` in the `sha` query parameter.
+** The COMMIT_DIFF request uses `parentIdKey=sha` to extract the commit SHA from its parent COMMIT object, passing it as `${LW_PARENT_DATA_KEY}` in the endpoint.
+** The FOLDER request uses `parentIdKey=path` to extract the directory path from its parent CONTENT object,
+** and the BLOB request uses `parentIdKey=path` to extract the file path from its parent FOLDER object.
 
 === Binary Parsing:
 * The BLOB request uses `binaryResponse=true` to enable binary parsing. The request includes the `Accept: application/vnd.github.raw+json` header so the GitHub Contents API endpoint (`/repos/{owner}/{repo}/contents/{path}`) returns raw binary file content instead of a base64-encoded JSON object. With binary response enabled, the connector download the raw content and send it to Fusion Parsers.
@@ -203,7 +203,7 @@ The following terms are provided as a reference.
 |Response Handling| The responseConfiguration defines the mapping between the response and data objects to be indexed.
 |Data Path|The path to access a specific data object within a response. For GitHub endpoints that return bare JSON arrays, set to an empty string. The COMMIT_DIFF request uses `dataPath=files` to extract the `files` array from the single-commit detail response, creating one document per changed file. This property accepts JsonPath expressions e.g. `results`, `items[*]`.
 |Data ID|The identifier key for the data objects extracted with 'Data Path'. This value will be used to build the solr-document's ID. If not provided, a random UUID will be used. This property accepts JsonPath expressions, e.g. `html_url` to extract the unique URL of an object.
-|Parent Data Key|Required for all Child Requests. Map to a key from the parent object, whose value will be used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). In the repo template, most children set `parentIdKey=full_name` (required by the connector) but hardcode the `{owner}/{repo}` path in the endpoint. The BRANCH request sets `parentIdKey=name` so its COMMIT child receives the branch name via `${LW_PARENT_DATA_KEY}` in the `sha` query parameter. The CONTENT and FOLDER requests set `parentIdKey=path` so their child requests receive the file/directory path via `${LW_PARENT_DATA_KEY}` (e.g., `/repos/{owner}/{repo}/contents/${LW_PARENT_DATA_KEY}`).
+|Parent Data Key|Required for all Child Requests. Map to a key from the parent object, whose value will be used to replace the ${LW_PARENT_DATA_KEY} variable in the child request configuration (endpoint, query params or body). In the repo template, most children set `parentIdKey=full_name` (required by the connector) but hardcode the `{owner}/{repo}` path in the endpoint.
 |_lw_rest_object_type_s| All objects index this field, which value is the 'ObjectType' of the request that retrieved the object, e.g. `REPOSITORY`, `PULL_REQUEST`, `COMMIT`, `BRANCH`.
 |_lw_rest_object_s| All objects index this field. Contains the objectId extracted with the property 'Data ID'. E.g.: For a repository, indexes `_lw_rest_object_s: "https://github.com/owner/repo"`. For a pull request, indexes `_lw_rest_object_s: "https://github.com/owner/repo/pull/42"`.
 |_lw_rest_parent_object_ss| All objects index this field, which value is a list of the objectIds inherited from all their parents, and the objectId from the object itself. E.g.: For a pull request, indexes `_lw_rest_parent_object_ss: ["https://github.com/owner/repo", "https://github.com/owner/repo/pull/42"]`.
