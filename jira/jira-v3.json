@@ -60,7 +60,7 @@
           },
           "skipIndexation": false,
           "requestConfiguration": {
-            "endpoint": "/rest/api/3/search/jql",
+            "endpoint": "/rest/api/3/search",
             "pagination": {
               "paginationByBatchSize": {
                 "paginationStopConditionValue": "[]",
