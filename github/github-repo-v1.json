@@ -1,0 +1,524 @@
+{
+  "parserId": "_system",
+  "pipeline": "{add pipeline here}",
+  "connector": "lucidworks.rest",
+  "coreProperties": {},
+  "id": "rest-github-repo",
+  "type": "lucidworks.rest",
+  "properties": {
+    "collection": "{add collection here}",
+    "serviceURL": "https://api.github.com",
+    "authenticationMode": {
+      "basicAuth": {
+        "password": "{add personal access token here}",
+        "user": "{add github username here}"
+      }
+    },
+    "requestConfigurations": [
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "objectType": "REPOSITORY"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "dataId": "name",
+            "binaryResponse": false,
+            "dataPath": ""
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "ISSUE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/issues",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "state",
+                "queryValue": "all"
+              },
+              {
+                "queryKey": "filter",
+                "queryValue": "all"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "number",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "PULL_REQUEST"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/pulls",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "state",
+                "queryValue": "all"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "number",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "BRANCH"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/branches",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "name",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "BRANCH",
+            "objectType": "COMMIT"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/commits",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "sha",
+                "queryValue": "${LW_PARENT_DATA_KEY}"
+              },
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "sha",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "COMMIT",
+            "objectType": "COMMIT_DIFF"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/commits/${LW_PARENT_DATA_KEY}",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "dataId": "filename",
+            "binaryResponse": false,
+            "dataPath": "files",
+            "parentIdKey": "sha"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "TAG"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/tags",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "name",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "MILESTONE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/milestones",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              },
+              {
+                "queryKey": "state",
+                "queryValue": "all"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "title",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "COLLABORATOR"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/collaborators",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "login",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "RELEASE"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/releases",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "tag_name",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "COMMENT"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/issues/comments",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "number",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "COMMIT_COMMENT"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/comments",
+            "pagination": {
+              "paginationByBatchSize": {
+                "paginationStopConditionValue": "[]",
+                "paginationStopConditionKey": "$",
+                "batchSize": 1,
+                "indexStart": 1
+              }
+            },
+            "httpMethod": "GET",
+            "queries": [
+              {
+                "queryKey": "per_page",
+                "queryValue": "100"
+              },
+              {
+                "queryKey": "page",
+                "queryValue": "${LW_INDEX_START}"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "id",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "full_name"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "REPOSITORY",
+            "objectType": "CONTENT"
+          },
+          "skipIndexation": true,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/contents",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "dataId": "name",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "path"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": true,
+          "linkRequest": {
+            "parentObjectType": "CONTENT",
+            "objectType": "FOLDER"
+          },
+          "skipIndexation": true,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/contents/${LW_PARENT_DATA_KEY}",
+            "httpMethod": "GET"
+          },
+          "responseConfiguration": {
+            "dataId": "path",
+            "binaryResponse": false,
+            "dataPath": "",
+            "parentIdKey": "path"
+          }
+        }
+      },
+      {
+        "request": {
+          "recursiveRequest": false,
+          "linkRequest": {
+            "parentObjectType": "FOLDER",
+            "objectType": "BLOB"
+          },
+          "skipIndexation": false,
+          "requestConfiguration": {
+            "endpoint": "/repos/{add owner here}/{add repo name here}/contents/${LW_PARENT_DATA_KEY}",
+            "httpMethod": "GET",
+            "headers": [
+              {
+                "headerKey": "Accept",
+                "headerValue": "application/vnd.github.raw+json"
+              }
+            ]
+          },
+          "responseConfiguration": {
+            "dataId": "path",
+            "binaryResponse": true,
+            "dataPath": "",
+            "parentIdKey": "path"
+          }
+        }
+      }
+    ]
+  }
+}
