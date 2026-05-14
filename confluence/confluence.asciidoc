@@ -1,6 +1,6 @@
 == Confluence REST Configuration
 
-This documentation describes aspects of the Confluence REST `confluence-v2.json` file configuration such as the authentication methods, endpoints requested, data crawled, pagination information. Terminology is also provided as a reference.
+This documentation describes aspects of the Confluence REST `confluence.json` file configuration such as the authentication methods, endpoints requested, data crawled, pagination information. Terminology is also provided as a reference.
 
 The Confluence REST Configuration will index each confluence object listed below, as a separate solr document:
 
@@ -18,7 +18,7 @@ The deprecated Confluence v1 REST API endpoints required to obtain the object me
 For more information, see https://community.developer.atlassian.com/t/update-to-confluence-v1-api-deprecation-timeline/79687/18[v1-api-deprecation-timeline]
 and https://developer.atlassian.com/cloud/confluence/changelog/#.
 
-Therefore outdated configuration file `confluence-v1.json`, which depends on v1 endpoints, should not be used.
+Therefore the outdated configuration file, which depended on v1 endpoints, should not be used.
 
 The configuration was tested with Confluence Cloud
 
@@ -69,7 +69,7 @@ The Confluence REST configuration variables used are:
 == Endpoints Configuration with Confluence REST Connector
 
 * The following table describes the Confluence REST endpoints needed, and how those are configured with the rest-connector.
-* Each requests in configured under the property *List of Requests Configuration* (`requestConfigurations` in the confluence-v2.json` file)
+* Each requests in configured under the property *List of Requests Configuration* (`requestConfigurations` in the confluence.json` file)
 
 [cols="1,1,1,1,1,1",options="header"]
 |=======================
@@ -106,7 +106,7 @@ The Confluence REST configuration variables used are:
 
 == Response Parsing Configuration
 
-Per request, configure the property *Response Handling* to set up how to parse the response (`responseConfiguration` in the `confluence-v2.json` file)
+Per request, configure the property *Response Handling* to set up how to parse the response (`responseConfiguration` in the `confluence.json` file)
 
 === Plugin Parsing:
 
@@ -116,7 +116,7 @@ Per request, configure the property *Response Handling* to set up how to parse t
 * Properties `Response Handling -> Parent Data Key` are configured to extract the 'id' of the parent object.
 
 === Binary Parsing:
-* This property is not used with the `confluence-v2.json` configuration.
+* This property is not used with the `confluence.json` configuration.
 
 == Terminology
 
