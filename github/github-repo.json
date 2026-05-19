@@ -214,7 +214,7 @@
             "httpMethod": "GET"
           },
           "responseConfiguration": {
-            "dataId": "filename",
+            "dataId": "sha",
             "binaryResponse": false,
             "dataPath": "files",
             "parentIdKey": "sha"
@@ -408,7 +408,7 @@
             ]
           },
           "responseConfiguration": {
-            "dataId": "number",
+            "dataId": "id",
             "binaryResponse": false,
             "dataPath": "",
             "parentIdKey": "full_name"
