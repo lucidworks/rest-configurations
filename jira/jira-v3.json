@@ -25,22 +25,15 @@
           "requestConfiguration": {
             "endpoint": "/rest/api/3/project/search",
             "pagination": {
-              "paginationByBatchSize": {
-                "paginationStopConditionValue": "[]",
-                "paginationStopConditionKey": "values",
-                "batchSize": 50,
-                "indexStart": 0
+              "paginationByNextUrl": {
+                "paginationKey": "nextPage"
               }
             },
             "httpMethod": "GET",
             "queries": [
               {
-                "queryKey": "startAt",
-                "queryValue": "${LW_INDEX_START}"
-              },
-              {
                 "queryKey": "maxResults",
-                "queryValue": "${LW_BATCH_SIZE}"
+                "queryValue": "1"
               }
             ]
           },
@@ -62,11 +55,9 @@
           "requestConfiguration": {
             "endpoint": "/rest/api/3/search/jql",
             "pagination": {
-              "paginationByBatchSize": {
-                "paginationStopConditionValue": "[]",
-                "paginationStopConditionKey": "issues",
-                "batchSize": 50,
-                "indexStart": 0
+              "paginationByNextPageToken":{
+                "paginationKey": "nextPageToken",
+                "paginationQueryParam": "nextPageToken"
               }
             },
             "httpMethod": "GET",
@@ -76,12 +67,8 @@
                 "queryValue": "assignee,issuetype,priority,project,reporter,status,summary,updated"
               },
               {
-                "queryKey": "startAt",
-                "queryValue": "${LW_INDEX_START}"
-              },
-              {
                 "queryKey": "maxResults",
-                "queryValue": "${LW_BATCH_SIZE}"
+                "queryValue": "1"
               },
               {
                 "queryKey": "jql",
