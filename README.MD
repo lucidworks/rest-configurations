@@ -1,19 +1,34 @@
-# Rest-Configuration
+# REST V2 Connector Recipes
 
-## Overview
-Developing the REST API connector will furnish Fusion with a versatile tool capable of seamlessly integrating diverse data sources. Additionally, this initiative will afford us the strategic advantage of replacing several of our classic connectors reliant on REST API data ingestion.
+This repository contains ready-to-use recipes for the [Fusion REST V2 connector](https://doc.lucidworks.com/docs/fusion-connectors/connectors/rest-v2/overview) — a single connector that can index content from any REST API-compatible datasource.
 
-## Setup
-To configure the REST connector with a configuration, you will need to:
+Each recipe is a preconfigured JSON file for a specific datasource, with the endpoints, pagination, and field mappings already set up. Load a recipe into Fusion, fill in your credentials and connection details, and start crawling.
 
-1. Download the configuration from this repository.
-2. Use the curl command to provision the REST connector with any configuration from this repository. Before executing the curl command, please add the Fusion instance, JSON config, and within the JSON, please include the collection name and pipeline. Then execute the curl command:
+> You must install the REST V2 connector in Fusion before using these recipes.
 
-```
-curl -u username:password --location 'https://**fusion domain!**/api/apps/**fusion app name**/connectors/datasources' \
---header 'Content-Type: application/json' \
---data-raw 'add json here'
-```
-3. Log in to the Fusion admin and configure the relevant information, such as credentials, URL for the instance, collection, pipeline, parser etc.
+## Available recipes
 
-4. Now you're ready to go! Happy crawling!
+| Datasource | Recipe | Documentation |
+| --- | --- | --- |
+| Alfresco | [`alfresco/alfresco.json`](alfresco/alfresco.json) | [alfresco.asciidoc](alfresco/alfresco.asciidoc) |
+| Confluence | [`confluence/confluence.json`](confluence/confluence.json) | [confluence.asciidoc](confluence/confluence.asciidoc) |
+| GitHub | [`github/github-repo.json`](github/github-repo.json) | [github.asciidoc](github/github.asciidoc) |
+| Jira | [`jira/jira.json`](jira/jira.json) | [jira.asciidoc](jira/jira.asciidoc) |
+
+## Using a recipe
+
+1. Open the recipe's JSON file and copy its contents.
+2. Replace the placeholders in the JSON with your own values — at minimum, `serviceURL`, authentication credentials, `collection`, and `pipeline`.
+3. Send it to Fusion as the body of a POST request to the [Connector Datasources API](https://doc.lucidworks.com/api-reference/datasource-configuration-v2-api/create-a-v2-datasource):
+
+   ```bash
+   curl --location --request POST 'https://FUSION_HOST/api/apps/APP_NAME/connectors/datasources' \
+   --header 'Content-Type: application/json' \
+   --header 'Authorization: Basic AUTHORIZATION_CREDENTIALS=' \
+   --data-raw '{JSON_RECIPE}'
+   ```
+
+4. In Fusion, go to **Indexing > Datasources**, find the new datasource, and review or adjust the configuration.
+5. Save and run the datasource to start crawling.
+
+For a full walkthrough of each JSON field and how to adapt a recipe to your setup, see [Recipes](https://doc.lucidworks.com/docs/fusion-connectors/connectors/rest-v2/recipes/overview) and the [REST V2 connector reference](https://doc.lucidworks.com/docs/fusion-connectors/connectors/rest-v2/overview) on the Lucidworks documentation site.
